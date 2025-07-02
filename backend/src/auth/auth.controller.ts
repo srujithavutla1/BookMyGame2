@@ -18,6 +18,7 @@ export class AuthController {
   @Get('microsoft/callback')
   @UseGuards(AuthGuard('microsoft'))
   async microsoftAuthRedirect(@Req() req, @Res() res: Response) {
+    console.log(req.user)
     const token = await this.authService.login(req.user);
     
     res.cookie('access_token', token.access_token, {
@@ -27,10 +28,10 @@ export class AuthController {
       maxAge: 3600000, 
     });
     //console.log(req);
-    if(req.user.hasPassword)
+   // if(req.user.hasPassword)
     res.redirect('http://localhost:3000/login/success');
-    else
-    res.redirect('http://localhost:3000/setPassword');
+    // else
+    // res.redirect('http://localhost:3000/setPassword');
 
   }
 

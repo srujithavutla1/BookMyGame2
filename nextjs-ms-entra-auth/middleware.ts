@@ -8,17 +8,17 @@ const protectedRoutes = [
   '/bookings', 
   '/invitations', 
   '/setPassword',
-  '/games/:path*' // This will match all routes under /games
+  '/games/:path*'
 ];
 const authPageRoutes = ['/login'];
 const apiAuthPrefix = '/api/auth';
 const rootRedirectPath = '/BookMyGame';
+const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001';
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isApiAuthRoute = path.startsWith(apiAuthPrefix);
   const isProtectedRoute = protectedRoutes.some(route => {
-    // Handle dynamic routes
     if (route.includes(':path*')) {
       const basePath = route.split(':')[0];
       return path.startsWith(basePath);
@@ -29,29 +29,40 @@ export async function middleware(request: NextRequest) {
   const isRootPath = path === '/';
   const isSetPasswordPage = path === '/setPassword';
 
+  // Skip middleware for API auth routes
   if (isApiAuthRoute) {
     return NextResponse.next();
   }
 
+  // Handle root path redirect
   if (isRootPath) {
     return NextResponse.redirect(new URL(rootRedirectPath, request.url));
   }
 
-  // Check auth status for protected routes
-  if (isProtectedRoute) {
-    const authResponse = await fetch('http://localhost:3001/auth/profile', {
-      headers: {
-        Cookie: request.headers.get('Cookie') || '',
-      },
-      credentials: 'include',
-    });
+  // Check authentication status
+  const authResponse = await fetch(`${apiBaseUrl}/auth/profile`, {
+    headers: {
+      Cookie: request.headers.get('Cookie') || '',
+    },
+    credentials: 'include',
+  });
+  const isAuthenticated = authResponse.ok;
 
-    if (!authResponse.ok) {
+  // Handle undefined routes
+  if (!isProtectedRoute && !isAuthPageRoute && !isRootPath && !isApiAuthRoute) {
+    return isAuthenticated 
+      ? NextResponse.redirect(new URL('/BookMyGame', request.url))
+      : NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Handle protected routes
+  if (isProtectedRoute) {
+    if (!isAuthenticated) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
     if (!isSetPasswordPage && !path.startsWith('/games')) {
-      const hasPasswordResponse = await fetch('http://localhost:3001/auth/has-password', {
+      const hasPasswordResponse = await fetch(`${apiBaseUrl}/auth/has-password`, {
         headers: {
           Cookie: request.headers.get('Cookie') || '',
         },
@@ -60,8 +71,6 @@ export async function middleware(request: NextRequest) {
 
       if (hasPasswordResponse.ok) {
         const { hasPassword } = await hasPasswordResponse.json();
-          console.log(hasPassword);
-
         if (!hasPassword) {
           return NextResponse.redirect(new URL('/setPassword', request.url));
         }
@@ -69,32 +78,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (isAuthPageRoute) {
-    const authResponse = await fetch('http://localhost:3001/auth/profile', {
+  // Handle auth pages when already authenticated
+  if (isAuthPageRoute && isAuthenticated) {
+    const hasPasswordResponse = await fetch(`${apiBaseUrl}/auth/has-password`, {
       headers: {
         Cookie: request.headers.get('Cookie') || '',
       },
       credentials: 'include',
     });
 
-    if (authResponse.ok) {
-      const hasPasswordResponse = await fetch('http://localhost:3001/auth/has-password', {
-        headers: {
-          Cookie: request.headers.get('Cookie') || '',
-        },
-        credentials: 'include',
-      });
-
-      if (hasPasswordResponse.ok) {
-        const { hasPassword } = await hasPasswordResponse.json();
-         // console.log(hasPassword);
-
-        if (hasPassword) {
-          return NextResponse.redirect(new URL('/BookMyGame', request.url));
-        } else {
-          return NextResponse.redirect(new URL('/setPassword', request.url));
-        }
-      }
+    if (hasPasswordResponse.ok) {
+      const { hasPassword } = await hasPasswordResponse.json();
+      return hasPassword
+        ? NextResponse.redirect(new URL('/BookMyGame', request.url))
+        : NextResponse.redirect(new URL('/setPassword', request.url));
     }
   }
 
