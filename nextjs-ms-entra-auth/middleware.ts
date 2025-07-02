@@ -2,7 +2,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ['/BookMyGame', '/profile', '/bookings', '/invitations'];
+const protectedRoutes = [
+  '/BookMyGame', 
+  '/profile', 
+  '/bookings', 
+  '/invitations', 
+  '/setPassword',
+  '/games/:path*' // This will match all routes under /games
+];
 const authPageRoutes = ['/login'];
 const apiAuthPrefix = '/api/auth';
 const rootRedirectPath = '/BookMyGame';
@@ -10,9 +17,17 @@ const rootRedirectPath = '/BookMyGame';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isApiAuthRoute = path.startsWith(apiAuthPrefix);
-  const isProtectedRoute = protectedRoutes.includes(path);
+  const isProtectedRoute = protectedRoutes.some(route => {
+    // Handle dynamic routes
+    if (route.includes(':path*')) {
+      const basePath = route.split(':')[0];
+      return path.startsWith(basePath);
+    }
+    return path === route;
+  });
   const isAuthPageRoute = authPageRoutes.includes(path);
   const isRootPath = path === '/';
+  const isSetPasswordPage = path === '/setPassword';
 
   if (isApiAuthRoute) {
     return NextResponse.next();
@@ -34,6 +49,24 @@ export async function middleware(request: NextRequest) {
     if (!authResponse.ok) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+
+    if (!isSetPasswordPage && !path.startsWith('/games')) {
+      const hasPasswordResponse = await fetch('http://localhost:3001/auth/has-password', {
+        headers: {
+          Cookie: request.headers.get('Cookie') || '',
+        },
+        credentials: 'include',
+      });
+
+      if (hasPasswordResponse.ok) {
+        const { hasPassword } = await hasPasswordResponse.json();
+          console.log(hasPassword);
+
+        if (!hasPassword) {
+          return NextResponse.redirect(new URL('/setPassword', request.url));
+        }
+      }
+    }
   }
 
   if (isAuthPageRoute) {
@@ -45,7 +78,23 @@ export async function middleware(request: NextRequest) {
     });
 
     if (authResponse.ok) {
-      return NextResponse.redirect(new URL('/BookMyGame', request.url));
+      const hasPasswordResponse = await fetch('http://localhost:3001/auth/has-password', {
+        headers: {
+          Cookie: request.headers.get('Cookie') || '',
+        },
+        credentials: 'include',
+      });
+
+      if (hasPasswordResponse.ok) {
+        const { hasPassword } = await hasPasswordResponse.json();
+         // console.log(hasPassword);
+
+        if (hasPassword) {
+          return NextResponse.redirect(new URL('/BookMyGame', request.url));
+        } else {
+          return NextResponse.redirect(new URL('/setPassword', request.url));
+        }
+      }
     }
   }
 

@@ -9,7 +9,6 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-
   @Get()
   async find(@Query('email') email?: string): Promise<User[] | User | null> {
     if (email) {
@@ -19,6 +18,7 @@ export class UsersController {
     }
   }
 
+  
   @Put()
   async update(@Body() users: User[]): Promise<User[]> {
     return this.usersService.update(users);

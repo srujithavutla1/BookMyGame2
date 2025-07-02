@@ -8,7 +8,6 @@ import { getGames } from "../services/gameService";
 import { getUserByEmail } from "../services/userService";
 import GameCardSkeleton from './GameCardSkeleton';
 import UserStatsSkeleton from './UserStatsSkeleton';
-import { authService } from '../services/authService';
 import { redirect } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 

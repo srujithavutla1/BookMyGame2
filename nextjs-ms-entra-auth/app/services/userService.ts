@@ -1,4 +1,3 @@
-
 // services/userService.ts
 import { User } from "../types/user";
 import { apiBase } from "./apiBase";
@@ -10,6 +9,8 @@ export const getUsers = async (): Promise<User[]> => {
 export const getUserByEmail = async (email: string): Promise<User> => {
   return apiBase.get<User>(`/users?email=${encodeURIComponent(email)}`);
 };
+
+
 
 export const updateUsers = async (users: User[]): Promise<void> => {
   await apiBase.put<void>('/users', users);

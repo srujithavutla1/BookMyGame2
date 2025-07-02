@@ -4,41 +4,64 @@ import { apiBase } from "./apiBase";
 export type UserProfile = {
   userId: string;
   email: string;
-  // Add any other user properties you expect from the backend
 };
 
-export const authService = {
-  /**
-   * Fetches the current user's profile
-   */
-  getProfile: async (): Promise<UserProfile> => {
-    return apiBase.get<UserProfile>('/auth/profile');
-  },
+export type LoginResponse = {
+  success: boolean;
+  message?: string;
+};
 
-  /**
-   * Initiates the Microsoft login flow (redirects to backend)
-   */
-  loginWithMicrosoft: async (): Promise<void> => {
-    // Note: This will redirect to the backend's OAuth endpoint
-    window.location.href = 'http://localhost:3001/auth/microsoft';
-  },
+export const getProfile = async (): Promise<UserProfile> => {
+  return apiBase.get<UserProfile>('/auth/profile');
+};
 
-  /**
-   * Logs out the current user
-   */
-  logout: async (): Promise<{ success: boolean }> => {
-    return apiBase.get<{ success: boolean }>('/auth/logout');
-  },
+export const loginWithMicrosoft = async (): Promise<void> => {
+  window.location.href = 'http://localhost:3001/auth/microsoft';
+};
 
-  /**
-   * Checks if the user is authenticated by attempting to fetch their profile
-   */
-  checkAuth: async (): Promise<boolean> => {
-    try {
-      await authService.getProfile();
-      return true;
-    } catch (error) {
-      return false;
-    }
+export const loginWithEmailPassword = async (email: string, password: string): Promise<LoginResponse> => {
+  try {
+    const response = await apiBase.post<LoginResponse>('/auth/login', { email, password });
+    return response;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || 'An error occurred during login'
+    };
+  }
+};
+
+export const logout = async (): Promise<{ success: boolean }> => {
+  return apiBase.get<{ success: boolean }>('/auth/logout');
+};
+
+export const checkAuth = async (): Promise<boolean> => {
+  try {
+    await getProfile();
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const hasPassword = async (): Promise<boolean> => {
+  try {
+    const response = await apiBase.get<{ hasPassword: boolean }>('/auth/has-password');
+    return response.hasPassword;
+  } catch (error) {
+    console.error('Error checking password status:', error);
+    return false;
+  }
+};
+
+export const setUserPassword = async (password: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const response = await apiBase.post<{ success: boolean }>('/auth/set-password', { password });
+    return response;
+  } catch (error: any) {
+    return { 
+      success: false, 
+      message: error.message || 'Failed to set password' 
+    };
   }
 };

@@ -1,10 +1,10 @@
 // src/auth/auth.service.ts
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../users/schemas/user.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   constructor(
@@ -17,7 +17,7 @@ export class AuthService {
     const email = emails[0].value;
 
     let user = await this.userModel.findOne({ email }).exec();
-
+    console.log(user);
     if (!user) {
       user = new this.userModel({
         userId: id,
@@ -38,7 +38,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
     };
-    console.log(payload);
+    //console.log(payload);
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -51,4 +51,48 @@ export class AuthService {
       return null;
     }
   }
+  async setPassword(email: string, password: string): Promise<User> {
+    if (password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const user = await this.userModel.findOneAndUpdate(
+      { email },
+      { password: hashedPassword, hasPassword:true},
+      { new: true }
+    ).exec();
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return user;
+  }
+   async checkHasPassword(email: string): Promise<{ hasPassword: boolean }> {
+    const user = await this.userModel.findOne({ email }).select('hasPassword').exec();
+    console.log(user);
+    return { hasPassword: user?.hasPassword || false };
+  }
+ 
+async validateEmailPassword(email: string, password: string): Promise<User> {
+  const user = await this.userModel.findOne({ email }).exec();
+  
+  if (!user) {
+    throw new BadRequestException('User not found');
+  }
+  // console.log(user.password);
+  // if (!user.hasPassword) {
+  //   throw new BadRequestException('Please login with Microsoft to complete registration');
+  // }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    throw new BadRequestException('Invalid credentials');
+  }
+
+  return user;
+}
 }

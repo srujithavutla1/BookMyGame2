@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 
 export default function LoginSuccess() {
-  const { checkAuth } = useAuth();
   const router = useRouter();
 
   useEffect(() => {

@@ -1,4 +1,3 @@
-
 import { Slot } from "@/app/types/booking";
 import SlotCard from "./SlotCard";
 import { Game } from "@/app/types/game";
@@ -12,7 +11,6 @@ interface SlotsListProps {
 }
 
 export default function SlotsList({ slots, game, onSelectSlot,onCancelSlot}: SlotsListProps) {
-  //this is a server component, i will write it in slotCard
   return (
     <div className="space-y-4">
       {
