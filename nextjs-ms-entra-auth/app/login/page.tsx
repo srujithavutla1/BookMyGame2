@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../components/ui/Button";
 import { loginWithEmailPassword, loginWithMicrosoft } from "../services/authService";
+import LoginButton from "../components/LoginButton";
 
 export default function Login() {
   const router = useRouter();
@@ -41,15 +42,6 @@ export default function Login() {
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Or{' '}
-            <button 
-              onClick={() => loginWithMicrosoft()}
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              login with Microsoft
-            </button>
-          </p>
         </div>
         
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -107,6 +99,14 @@ export default function Login() {
               Sign in
             </Button>
           </div>
+          <div className="flex items-center my-4">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="mx-4 text-sm text-gray-500">Or</span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        <LoginButton />
+
         </form>
       </div>
     </div>

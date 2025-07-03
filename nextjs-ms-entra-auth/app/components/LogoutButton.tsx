@@ -1,11 +1,14 @@
-// components/LogoutButton.tsx
 "use client";
 import { useRouter } from "next/navigation";
+import { Button } from "./ui/Button";
+import { useState } from "react";
 
 function LogoutButton() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('http://localhost:3001/auth/logout', {
         method: 'GET',
@@ -17,16 +20,20 @@ function LogoutButton() {
       }
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <button
+    <Button
       onClick={handleLogout}
-      className="w-full bg-blue-800 text-white p-3 rounded-md hover:opacity-80"
+      variant="danger"
+      className="w-full p-3"
+      isLoading={isLoading}
     >
       Logout
-    </button>
+    </Button>
   );
 }
 

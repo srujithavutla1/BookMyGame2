@@ -1,11 +1,9 @@
-// components/LoginButton.tsx
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Button } from "./ui/Button";
 
 function LoginButton() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -15,13 +13,14 @@ function LoginButton() {
   };
 
   return (
-    <button
+    <Button
       onClick={handleLogin}
-      className="w-full bg-blue-800 text-white my-5 p-3 rounded-md hover:opacity-80 disabled:opacity-75"
-      disabled={isLoading}
+      variant="microsoft"
+      className="w-full p-3"
+      isLoading={isLoading}
     >
-      {isLoading ? "Signing in..." : "Login With Microsoft"}
-    </button>
+      Login With Microsoft
+    </Button>
   );
 }
 

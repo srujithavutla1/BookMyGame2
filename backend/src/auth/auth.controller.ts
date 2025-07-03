@@ -28,10 +28,10 @@ export class AuthController {
       maxAge: 3600000, 
     });
     //console.log(req);
-   // if(req.user.hasPassword)
-    res.redirect('http://localhost:3000/login/success');
-    // else
-    // res.redirect('http://localhost:3000/setPassword');
+   if(req.user.hasPassword)
+    res.redirect('http://localhost:3000/BookMyGame');
+    else
+    res.redirect('http://localhost:3000/setPassword');
 
   }
 
