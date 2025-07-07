@@ -1,17 +1,17 @@
-// app/login/success/page.tsx
-"use client";
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/context/AuthContext';
+// // app/login/success/page.tsx
+// "use client";
+// import { useEffect } from 'react';
+// import { useRouter } from 'next/navigation';
+// import { useAuth } from '@/app/context/AuthContext';
 
-export default function LoginSuccess() {
-  const router = useRouter();
+// export default function LoginSuccess() {
+//   const router = useRouter();
 
-  useEffect(() => {
-      router.push('/BookMyGame');
+//   useEffect(() => {
+//       router.push('/BookMyGame');
   
-   }, [router]);
+//    }, [router]);
 
-  return <div>Login successful, redirecting...</div>;
-}
+//   return <div>Login successful, redirecting...</div>;
+// }
 

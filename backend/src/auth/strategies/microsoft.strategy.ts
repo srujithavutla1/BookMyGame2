@@ -22,7 +22,6 @@ export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') {
   // ... rest of the code
 
   async validate(accessToken: string, refreshToken: string, profile: any) {
-    // Here you can find or create the user in your database
     const user = await this.authService.validateUser(profile);
     return user;
   }

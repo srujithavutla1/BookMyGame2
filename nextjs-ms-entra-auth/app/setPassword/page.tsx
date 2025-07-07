@@ -1,7 +1,7 @@
 // components/SetPassword.tsx
 "use client"
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Changed from 'next/router'
+import { useRouter } from 'next/navigation'; 
 import { setUserPassword } from '../services/authService';
 
 export default function SetPassword() {

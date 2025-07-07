@@ -15,7 +15,7 @@ async function fetchData<T>(
 ): Promise<T> {
   const response = await fetch(`http://localhost:3001${endpoint}`, {
     ...options,
-    credentials: 'include', // This sends cookies with the request
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,

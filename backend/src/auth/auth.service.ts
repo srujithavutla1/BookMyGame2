@@ -17,7 +17,6 @@ export class AuthService {
     const email = emails[0].value;
 
     let user = await this.userModel.findOne({ email }).exec();
-    console.log(user);
     if (!user) {
       user = new this.userModel({
         userId: id,
@@ -38,7 +37,6 @@ export class AuthService {
       email: user.email,
       name: user.name,
     };
-    //console.log(payload);
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -73,7 +71,7 @@ export class AuthService {
   }
    async checkHasPassword(email: string): Promise<{ hasPassword: boolean }> {
     const user = await this.userModel.findOne({ email }).select('hasPassword').exec();
-    console.log(user);
+
     return { hasPassword: user?.hasPassword || false };
   }
  
@@ -83,10 +81,7 @@ async validateEmailPassword(email: string, password: string): Promise<User> {
   if (!user) {
     throw new BadRequestException('User not found');
   }
-  // console.log(user.password);
-  // if (!user.hasPassword) {
-  //   throw new BadRequestException('Please login with Microsoft to complete registration');
-  // }
+  
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {

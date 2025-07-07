@@ -18,7 +18,7 @@ export class AuthController {
   @Get('microsoft/callback')
   @UseGuards(AuthGuard('microsoft'))
   async microsoftAuthRedirect(@Req() req, @Res() res: Response) {
-    console.log(req.user)
+   // console.log(req.user)
     const token = await this.authService.login(req.user);
     
     res.cookie('access_token', token.access_token, {
@@ -27,7 +27,7 @@ export class AuthController {
       sameSite: 'strict',
       maxAge: 3600000, 
     });
-    //console.log(req);
+
    if(req.user.hasPassword)
     res.redirect('http://localhost:3000/BookMyGame');
     else
@@ -65,7 +65,6 @@ export class AuthController {
     }
   }
 
-  // src/auth/auth.controller.ts
 @Post('login')
 async loginWithEmailPassword(
   @Body() body: { email: string; password: string },
