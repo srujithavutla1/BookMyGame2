@@ -206,4 +206,12 @@ export class SlotsService {
       ...this.getTodayFilter()
     }).exec();
   }
+
+
+  async getSlotBySlotId(slotId: string): Promise<Slot | null> {
+  return this.slotModel.findOne({
+    slotId: slotId,
+    ...this.getTodayFilter()
+  }).exec();
+}
 }

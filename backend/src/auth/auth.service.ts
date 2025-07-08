@@ -12,24 +12,27 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(profile: any): Promise<User> {
-    const { displayName, emails, id } = profile;
-    const email = emails[0].value;
+  async validateUser(profile: any, accessToken: string): Promise<User> {
+  const { displayName, emails, id } = profile;
+  const email = emails[0].value;
 
-    let user = await this.userModel.findOne({ email }).exec();
-    if (!user) {
-      user = new this.userModel({
-        userId: id,
-        name: displayName,
-        email: email,
-        chances: 3,
-        isActive: true,
-      });
-      await user.save();
-    }
-
-    return user;
+  let user = await this.userModel.findOne({ email }).exec();
+  if (!user) {
+    user = new this.userModel({
+      userId: id,
+      name: displayName,
+      email: email,
+      chances: 3,
+      isActive: true,
+      microsoftAccessToken: accessToken, // Store access token
+    });
+  } else {
+    user.microsoftAccessToken = accessToken; // Update access token
   }
+  await user.save();
+
+  return user;
+}
 
   async login(user: User) {
     const payload = { 
@@ -88,6 +91,14 @@ async validateEmailPassword(email: string, password: string): Promise<User> {
     throw new BadRequestException('Invalid credentials');
   }
 
+  return user;
+}
+
+async validateUserByEmail(email: string): Promise<User> {
+  const user = await this.userModel.findOne({ email }).exec();
+  if (!user) {
+    throw new BadRequestException('User not found');
+  }
   return user;
 }
 }

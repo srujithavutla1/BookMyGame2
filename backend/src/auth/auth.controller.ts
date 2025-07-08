@@ -4,10 +4,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GraphService } from 'src/graph/graph.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService,private readonly graphService: GraphService) {}
 
   @Get('microsoft')
   @UseGuards(AuthGuard('microsoft'))
@@ -85,6 +86,23 @@ async loginWithEmailPassword(
   } catch (error) {
     throw new BadRequestException(error.message);
   }
+}
+
+@Post('send-teams-message')
+@UseGuards(JwtAuthGuard)
+async sendTeamsMessage(@Req() req, @Body() body: { recipientEmail: string, message: string }) {
+  const { recipientEmail, message } = body;
+  const user = await this.authService.validateUserByEmail(req.user.email);
+  if (!user.microsoftAccessToken) {
+    throw new BadRequestException('No Microsoft access token found for this user');
+  }
+ const recipient = await this.authService.validateUserByEmail(recipientEmail);
+
+  const senderId = await this.graphService.getUserIdByEmail(user.microsoftAccessToken, user.email);
+  const chatId = await this.graphService.getOrCreateChat(user.microsoftAccessToken, senderId, recipientEmail,recipient.microsoftAccessToken);
+  await this.graphService.sendMessage(user.microsoftAccessToken, chatId, message);
+
+  return { success: true, message: 'Message sent successfully' };
 }
   
 }

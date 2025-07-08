@@ -5,9 +5,11 @@ import { Invitation, InvitationSchema } from './schemas/invitation.schema';
 import { InvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { SlotsModule } from 'src/slots/slots.module';
 
 @Module({
   imports: [
+    SlotsModule,
     MongooseModule.forFeature([{ name: Invitation.name, schema: InvitationSchema }])
   ],
   controllers: [InvitationsController],

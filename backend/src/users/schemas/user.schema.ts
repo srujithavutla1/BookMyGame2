@@ -39,6 +39,9 @@ export class User extends Document {
 
   @Prop({ default: Date.now })
   createdAt: Date;
+
+  @Prop({ default: null })
+  microsoftAccessToken: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

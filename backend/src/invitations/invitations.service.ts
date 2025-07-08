@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 import { Invitation, InvitationStatus } from './schemas/invitation.schema';
 import { InvitationStatusDto } from './dto/invitationStatus.dto';
+import { CreateInvitationDto } from './dto/invitation.dto';
+import { SlotsService } from 'src/slots/slots.service';
 
 @Injectable()
 export class InvitationsService {
@@ -13,7 +16,9 @@ export class InvitationsService {
   }
 
   constructor(
-    @InjectModel(Invitation.name) private invitationModel: Model<Invitation>
+    @InjectModel(Invitation.name) private invitationModel: Model<Invitation>,
+    private readonly slotsService: SlotsService // Inject SlotsService
+
   ) {}
 
   private getTodayFilter() {
@@ -95,4 +100,30 @@ export class InvitationsService {
       ...this.getTodayFilter()
     }).exec();
   }
+  async createInvitations(createInvitationDtos: CreateInvitationDto[],senderEmail: string): Promise<Invitation[]> {
+    if (createInvitationDtos.length === 0) {
+        return [];
+    }
+    const slotId = createInvitationDtos[0].slotId;
+    const slot = await this.slotsService.getSlotBySlotId(slotId);
+    
+    if (!slot) {
+        throw new Error(`Slot with ID ${slotId} not found`);
+    }
+
+    const invitationsToCreate = createInvitationDtos.map(dto => ({
+        invitationId: uuidv4(), // Generate new GUID
+        slotId: dto.slotId,
+        recipientEmail: dto.recipientEmail,
+        senderEmail: senderEmail,
+        invitationStatus: 'pending' as InvitationStatus,
+        sentAt: new Date(),
+        expiresAt: slot.expiresAt, // Set from slot's expiration
+        isActive: true,
+    }));
+
+    // Using insertMany for bulk insertion
+    const createdInvitations = await this.invitationModel.insertMany(invitationsToCreate);
+    return createdInvitations;
+}
 }

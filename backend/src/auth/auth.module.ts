@@ -1,4 +1,3 @@
-// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -10,10 +9,12 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { GraphService } from '../graph/graph.service'; // Import GraphService
 
 @Module({
   imports: [
-    ConfigModule, // Add this line to import ConfigModule
+    GraphService,
+    ConfigModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     UsersModule,
     PassportModule.register({ defaultStrategy: 'microsoft' }),
@@ -26,8 +27,8 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, MicrosoftStrategy, JwtStrategy],
+  providers: [AuthService, MicrosoftStrategy, JwtStrategy, GraphService], // Add GraphService
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, GraphService], // Export GraphService
 })
 export class AuthModule {}

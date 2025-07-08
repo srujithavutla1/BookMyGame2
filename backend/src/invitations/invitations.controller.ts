@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { Invitation } from './schemas/invitation.schema';
 import { InvitationsService } from './invitations.service';
 import { InvitationStatusDto } from './dto/invitationStatus.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CreateInvitationDto } from './dto/invitation.dto';
+import { Request } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('invitations')
@@ -46,8 +48,14 @@ export class InvitationsController {
   
   @Post('updateInvitationStatus')
   async updateInvitationStatus(@Body() invitationStatusDto: InvitationStatusDto): Promise<Invitation[]|null> {
-
     return this.invitationsService.updateInvitationStatus(invitationStatusDto);
+  }
+
+  @Post('create')
+  async createInvitations(@Req() req: Request,@Body() createInvitationDtos: CreateInvitationDto[]): Promise<Invitation[]> {
+    console.log(req)
+    const senderEmail =req.user?.email!;
+    return this.invitationsService.createInvitations(createInvitationDtos,senderEmail);
   }
   
 }
