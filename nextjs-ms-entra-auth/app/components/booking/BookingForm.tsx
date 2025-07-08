@@ -9,7 +9,7 @@ import { getUserByEmail, getUsers, updateUserChances, updateUsers} from "@/app/s
 import {  getInvitationBySlotIdAndRecipientEmail, getInvitationsBySlotId,  updateInvitations, updateInvitationStatus } from "@/app/services/invitationService";
 import {  createSlot,  getSlotsByGameId,  getSlotStatus,  updateSlotPeopleAdded } from "@/app/services/slotService";
 import { Trash2 } from "lucide-react";
-
+import { v4 as uuidv4 } from 'uuid';
 interface BookingFormProps {
   slot: Slot;
   game: Game;
@@ -120,10 +120,12 @@ export default function BookingForm({
 
   const handleSubmit = async () => {
     const isBooked=await getSlotStatus(game.gameId,slot.startTime,slot.endTime);
+
     if(isBooked&&!isEditMode){
     setError("The slot you were trying to book is on hold or booked, please try booking other slot ");
     return;
     }
+
     if (!isEditMode) {
       const currentUser = await getUserByEmail(userEmail);
       if (!currentUser || currentUser.chances <= 0) {
@@ -139,6 +141,7 @@ export default function BookingForm({
     setIsSubmitting(true);
     setError("");
 
+
     try {
       if (!isEditMode) {
         await updateUserChances([userEmail], -1);
@@ -151,15 +154,15 @@ export default function BookingForm({
       const expiresAt = new Date(Date.parse(createdAt) + 1 * 60 * 1000).toISOString();
       if(!isEditMode)
       {
-        const newSlot: CreateSlot = {
-        slotId: slot.slotId,
-        gameId: slot.gameId,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        peopleAdded: newRecipientEmails.length + 1,
-        heldBy: slot.heldBy
-      }
-        await createSlot(newSlot);
+          const newSlot: CreateSlot = {
+          slotId: slot.slotId,
+          gameId: slot.gameId,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          peopleAdded: newRecipientEmails.length + 1,
+          heldBy: slot.heldBy
+        }
+          await createSlot(newSlot);
       }
       else{
         
@@ -179,7 +182,7 @@ export default function BookingForm({
         );
       
         const newInvitations:Invitation[] = participantsToCreate.map(participant => ({
-        invitationId: Math.random(),
+        invitationId: uuidv4(),
         slotId: slot.slotId,
         senderEmail: userEmail,
         recipientEmail: participant,
@@ -198,7 +201,7 @@ export default function BookingForm({
        
       else{
           const newInvitations:Invitation[] = newRecipientEmails.map(participant => ({
-            invitationId: Math.random(),
+            invitationId: uuidv4(),
             slotId: slot.slotId,
             senderEmail: userEmail,
             recipientEmail: participant,

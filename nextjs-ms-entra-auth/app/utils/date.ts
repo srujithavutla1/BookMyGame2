@@ -1,15 +1,9 @@
 
 import { Slot, SlotStatus } from "../types/booking";
+import { v4 as uuidv4 } from 'uuid';
 
 
 import { getAllActiveSlotsByGameId, getSlotsByGameId } from "../services/slotService";
-function generateGUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 
 export async function generateTimeSlots(gameId: string, email: string): Promise<Slot[]> {
@@ -31,7 +25,7 @@ export async function generateTimeSlots(gameId: string, email: string): Promise<
         .toString()
         .padStart(2, "0")}`;
 
-      const slotId =  generateGUID();
+      const slotId =  uuidv4();
       
       const existingSlot = existingSlots.find(s => s.startTime===startTime&& s.slotStatus!== 'failed' && s.slotStatus !=='slot cancelled');
       if (existingSlot) {

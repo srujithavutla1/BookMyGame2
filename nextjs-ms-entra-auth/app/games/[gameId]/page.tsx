@@ -16,13 +16,8 @@ import { Invitation, InvitationStatus } from "@/app/types/invitation";
 import { updateSlots, updateSlotStatus } from "@/app/services/slotService";
 import { getGame } from "@/app/services/gameService";
 import { useAuth } from "@/app/context/AuthContext";
-function generateGUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
+import { v4 as uuidv4 } from 'uuid';
+
 
 export default function GamePage() {
 
@@ -141,7 +136,7 @@ export default function GamePage() {
         newSlots[slotIndex] = updatedSlot;
       } else {
         newSlots[slotIndex] = {
-          slotId: generateGUID(),
+          slotId: uuidv4(),
           gameId: updatedSlot.gameId,
           startTime: updatedSlot.startTime,
           endTime: updatedSlot.endTime,
@@ -201,7 +196,7 @@ export default function GamePage() {
         
       ]);
 
-      const newSlotId = generateGUID();
+      const newSlotId = uuidv4();
     
       const newSlot:Slot={
         slotId:newSlotId,
