@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
@@ -45,6 +45,15 @@ export class UsersService {
 
     return { modifiedCount: result.modifiedCount };
   }
+
+  async validateUserByEmail(email: string): Promise<User> {
+    const user = await this.userModel.findOne({ email }).exec();
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
+  }
+  
   @Cron('0 8 * * *', {
     timeZone: 'Asia/Kolkata' 
   })

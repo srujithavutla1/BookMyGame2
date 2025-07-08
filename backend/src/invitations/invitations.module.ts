@@ -5,15 +5,22 @@ import { Invitation, InvitationSchema } from './schemas/invitation.schema';
 import { InvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { SlotsModule } from 'src/slots/slots.module';
+import { UsersModule } from 'src/users/users.module';
+import { Slot, SlotSchema } from 'src/slots/schemas/slot.schema';
+import { GraphModule } from 'src/graph/graph.module';
 
 @Module({
   imports: [
-    SlotsModule,
-    MongooseModule.forFeature([{ name: Invitation.name, schema: InvitationSchema }])
+    GraphModule,
+    UsersModule,
+    MongooseModule.forFeature([{ name: Invitation.name, schema: InvitationSchema }]),
+    MongooseModule.forFeature([{ name: Slot.name, schema: SlotSchema }]),
+    
   ],
   controllers: [InvitationsController],
   providers: [InvitationsService],
-  exports: [InvitationsService], 
+  
+
+  
 })
 export class InvitationsModule {}

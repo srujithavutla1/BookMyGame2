@@ -3,11 +3,10 @@ import { Client } from '@microsoft/microsoft-graph-client';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth/auth.service';
 import 'isomorphic-fetch';
-
+@Injectable()
 export class GraphService {
   constructor(
-    private readonly configService: ConfigService,
-    private readonly authService: AuthService,
+    
   ) {}
 
   // Initialize Graph client with access token

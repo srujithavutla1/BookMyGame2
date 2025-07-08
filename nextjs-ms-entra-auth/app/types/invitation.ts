@@ -17,13 +17,8 @@ export interface Invitation {
 }
 
 export interface CreateInvitation {
-  invitationId: string;
+  
   slotId: string;
-  senderEmail: string;
   recipientEmail: string;
-  // invitationStatus: InvitationStatus;
-  // sentAt: string; 
-  // respondedAt?: string; 
-  // expiresAt?: string; 
-  // isActive?:Boolean;
+ 
 }

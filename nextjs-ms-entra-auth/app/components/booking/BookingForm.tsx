@@ -2,11 +2,11 @@
 import { CreateSlot, Slot } from "@/app/types/booking";
 import { Game } from "@/app/types/game";
 import { User } from "@/app/types/user";
-import { Invitation, InvitationStatus } from "@/app/types/invitation";
+import { CreateInvitation, Invitation, InvitationStatus } from "@/app/types/invitation";
 import { useState, useEffect } from "react";
 import { Button } from "../ui/Button";
 import { getUserByEmail, getUsers, updateUserChances, updateUsers} from "@/app/services/userService";
-import {  getInvitationBySlotIdAndRecipientEmail, getInvitationsBySlotId,  updateInvitations, updateInvitationStatus } from "@/app/services/invitationService";
+import {  createInvitations, getInvitationBySlotIdAndRecipientEmail, getInvitationsBySlotId,  updateInvitations, updateInvitationStatus } from "@/app/services/invitationService";
 import {  createSlot,  getSlotsByGameId,  getSlotStatus,  updateSlotPeopleAdded } from "@/app/services/slotService";
 import { Trash2 } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
@@ -181,39 +181,22 @@ export default function BookingForm({
           !commonParticipants?.some(common => current===common)
         );
       
-        const newInvitations:Invitation[] = participantsToCreate.map(participant => ({
-        invitationId: uuidv4(),
+        const newInvitations:CreateInvitation[] = participantsToCreate.map(participant => ({
         slotId: slot.slotId,
-        senderEmail: userEmail,
         recipientEmail: participant,
-        invitationStatus: "pending",
-        sentAt: createdAt,
-        expiresAt: expiresAt,///should be changed to slot expiration time
-        isActive: true
       }));
-
-      setInvitations(prev => [...prev, ...newInvitations]);
-
-      await updateInvitations([...newInvitations]);
-      
+      const createdInvitations=await createInvitations([...newInvitations]);
+      setInvitations(prev => [...prev, ...createdInvitations]);
+  
       }
-
-       
+    
       else{
-          const newInvitations:Invitation[] = newRecipientEmails.map(participant => ({
-            invitationId: uuidv4(),
+          const newInvitations:CreateInvitation[] = newRecipientEmails.map(participant => ({
             slotId: slot.slotId,
-            senderEmail: userEmail,
             recipientEmail: participant,
-            invitationStatus: "pending",
-            sentAt: createdAt,
-            expiresAt: expiresAt,
-            isActive: true
           }));
-
-          setInvitations(prev => [...prev, ...newInvitations]);
-
-          await updateInvitations([...invitations, ...newInvitations]);
+          const createdInvitations=await createInvitations([...newInvitations]);
+          setInvitations(prev => [...prev, ...createdInvitations]);
         }
       onSuccess();
       onClose();

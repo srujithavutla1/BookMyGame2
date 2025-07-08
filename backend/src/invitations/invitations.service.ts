@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Invitation, InvitationStatus } from './schemas/invitation.schema';
 import { InvitationStatusDto } from './dto/invitationStatus.dto';
 import { CreateInvitationDto } from './dto/invitation.dto';
+import { UsersService } from 'src/users/users.service';
+import { GraphService } from 'src/graph/graph.service';
+import { Slot } from 'src/slots/schemas/slot.schema';
 import { SlotsService } from 'src/slots/slots.service';
 
 @Injectable()
@@ -17,7 +20,12 @@ export class InvitationsService {
 
   constructor(
     @InjectModel(Invitation.name) private invitationModel: Model<Invitation>,
-    private readonly slotsService: SlotsService // Inject SlotsService
+    @InjectModel(Slot.name) private slotModel: Model<Slot>,
+
+    private readonly usersService: UsersService,
+    private readonly graphService: GraphService,
+    
+
 
   ) {}
 
@@ -100,30 +108,81 @@ export class InvitationsService {
       ...this.getTodayFilter()
     }).exec();
   }
-  async createInvitations(createInvitationDtos: CreateInvitationDto[],senderEmail: string): Promise<Invitation[]> {
-    if (createInvitationDtos.length === 0) {
-        return [];
-    }
-    const slotId = createInvitationDtos[0].slotId;
-    const slot = await this.slotsService.getSlotBySlotId(slotId);
-    
-    if (!slot) {
-        throw new Error(`Slot with ID ${slotId} not found`);
-    }
 
-    const invitationsToCreate = createInvitationDtos.map(dto => ({
-        invitationId: uuidv4(), // Generate new GUID
-        slotId: dto.slotId,
-        recipientEmail: dto.recipientEmail,
-        senderEmail: senderEmail,
-        invitationStatus: 'pending' as InvitationStatus,
-        sentAt: new Date(),
-        expiresAt: slot.expiresAt, // Set from slot's expiration
-        isActive: true,
-    }));
 
-    // Using insertMany for bulk insertion
-    const createdInvitations = await this.invitationModel.insertMany(invitationsToCreate);
-    return createdInvitations;
+
+  async createInvitations(createInvitationDtos: CreateInvitationDto[], senderEmail: string): Promise<Invitation[]> {
+  if (createInvitationDtos.length === 0) {
+    return [];
+  }
+  
+  // const slotId = createInvitationDtos[0].slotId;
+
+ 
+  //  const slot =  await this.slotsService.getSlotBySlotId(slotId);
+  
+  // if (!slot) {
+  //   throw new Error(`Slot with ID ${slotId} not found`);
+  // }
+
+
+  const sentAt = new Date();
+  const expiresAt = new Date(sentAt.getTime() + 5 * 60 * 1000); //
+  const invitationsToCreate = createInvitationDtos.map(dto => ({
+    invitationId: uuidv4(),
+    slotId: dto.slotId,
+    recipientEmail: dto.recipientEmail,
+    senderEmail: senderEmail,
+    invitationStatus: 'pending' as InvitationStatus,
+    sentAt: sentAt,
+    expiresAt: expiresAt,
+    isActive: true,
+  }));
+
+  const createdInvitations = await this.invitationModel.insertMany(invitationsToCreate);
+
+  // Send notifications to each recipient
+  try {
+    const senderUser = await this.usersService.validateUserByEmail(senderEmail);
+    if (senderUser.microsoftAccessToken) {
+      const message = `You've been invited to join a game session by ${senderEmail}`;
+        // Slot Details:
+        // - Game ID: ${slot.gameId}
+        // - Start Time: ${slot.startTime}
+        // - End Time: ${slot.endTime}
+        // Please respond to the invitation.`;
+
+      for (const dto of createInvitationDtos) {
+        try {
+          const recipient = await this.usersService.validateUserByEmail(dto.recipientEmail);
+          if (recipient?.microsoftAccessToken) {
+            const senderId = await this.graphService.getUserIdByEmail(
+              senderUser.microsoftAccessToken, 
+              senderUser.email
+            );
+            const chatId = await this.graphService.getOrCreateChat(
+              senderUser.microsoftAccessToken, 
+              senderId, 
+              dto.recipientEmail,
+              recipient.microsoftAccessToken
+            );
+            await this.graphService.sendMessage(
+              senderUser.microsoftAccessToken, 
+              chatId, 
+              message
+            );
+          }
+        } catch (error) {
+          // Log error but don't fail the whole operation
+          console.error(`Failed to send notification to ${dto.recipientEmail}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    // Log error but don't fail the whole operation
+    console.error('Error while sending notifications:', error);
+  }
+
+  return createdInvitations;
 }
 }

@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Slot, SlotSchema } from './schemas/slot.schema';
 import { SlotsController } from './slots.controller';
 import { SlotsService } from './slots.service';
-import { InvitationsModule } from '../invitations/invitations.module';
+
 import { GamesModule } from '../games/games.module'; // Add this import
 import { SlotExpirationService } from './slot-expiration.service'; // Add this import
 import { UsersModule } from 'src/users/users.module';
@@ -18,12 +18,14 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Invitation.name, schema: InvitationSchema }]),
     MongooseModule.forFeature([{ name: Game.name, schema: GameSchema }]),
-    InvitationsModule,
     UsersModule, 
-    GamesModule, 
+    GamesModule,
+  
+    
   ],
   controllers: [SlotsController],
-  providers: [SlotsService, SlotExpirationService],
+  providers: [SlotsService,SlotExpirationService],
+ 
   // exports: [Slot], 
 })
 export class SlotsModule {}

@@ -1,6 +1,6 @@
 
 // services/invitationService.ts
-import { Invitation, InvitationStatus } from "../types/invitation";
+import { CreateInvitation, Invitation, InvitationStatus } from "../types/invitation";
 import { apiBase } from "./apiBase";
 
 export const getInvitationsBySlotId = async (slotId: string): Promise<Invitation[]> => {
@@ -42,5 +42,9 @@ export const fetchInvitationsByRecipientEmail = async (recipientEmail: string): 
   return apiBase.get<Invitation[]>(
     `/invitations/getAllInvitationsByRecipientEmail?recipientEmail=${encodeURIComponent(recipientEmail)}`
   );
+};
+
+export const createInvitations = async (invitations: CreateInvitation[]): Promise<Invitation[]> => {
+  return apiBase.post<Invitation[]>('/invitations/create', invitations);
 };
 

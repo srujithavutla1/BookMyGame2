@@ -52,10 +52,12 @@ export class InvitationsController {
   }
 
   @Post('create')
-  async createInvitations(@Req() req: Request,@Body() createInvitationDtos: CreateInvitationDto[]): Promise<Invitation[]> {
-    console.log(req)
-    const senderEmail =req.user?.email!;
-    return this.invitationsService.createInvitations(createInvitationDtos,senderEmail);
+  async createInvitations(@Req() req: Request, @Body() createInvitationDtos: CreateInvitationDto[]): Promise<Invitation[]> {
+    const senderEmail = (req.user as { email?: string })?.email;
+    if (!senderEmail) {
+      throw new Error('User email not found');
+    }
+    return this.invitationsService.createInvitations(createInvitationDtos, senderEmail);
   }
   
 }

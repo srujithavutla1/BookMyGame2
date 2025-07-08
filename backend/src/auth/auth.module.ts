@@ -10,10 +10,11 @@ import { AuthController } from './auth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { GraphService } from '../graph/graph.service'; // Import GraphService
+import { GraphModule } from 'src/graph/graph.module';
 
 @Module({
   imports: [
-    GraphService,
+    GraphModule,
     ConfigModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     UsersModule,
