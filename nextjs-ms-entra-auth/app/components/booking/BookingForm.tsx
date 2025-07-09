@@ -37,7 +37,6 @@ export default function BookingForm({
   const [error, setError] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  //const [invitations,setInvitations]=useState<Invitation[]>([]);
   const [oldRecipientEmails,setOldRecipientEmails]=useState<string[]>([]);//before edit
   const [newUsers,setNewUsers]=useState<User[]>([]);
   const isEditMode = slot.slotStatus === "on-hold" && slot.heldBy === userEmail;
