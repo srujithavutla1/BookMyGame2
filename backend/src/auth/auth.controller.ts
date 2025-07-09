@@ -104,5 +104,4 @@ async sendTeamsMessage(@Req() req, @Body() body: { recipientEmail: string, messa
 
   return { success: true, message: 'Message sent successfully' };
 }
-  
 }

@@ -1,4 +1,3 @@
-// src/auth/strategies/microsoft.strategy.ts
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-microsoft';
@@ -16,13 +15,12 @@ export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') {
       clientSecret: configService.getOrThrow<string>('MICROSOFT_CLIENT_SECRET'),
       callbackURL: configService.getOrThrow<string>('MICROSOFT_CALLBACK_URL'),
       tenant: configService.getOrThrow<string>('MICROSOFT_TENANT_ID'),
-      scope: ['user.read', 'Chat.ReadWrite', 'Chat.Create'],
+      scope: ['User.Read', 'Chat.ReadWrite', 'Chat.Create', 'TeamsActivity.Send', 'email', 'openid', 'profile'],
     });
   }
-  // ... rest of the code
 
   async validate(accessToken: string, refreshToken: string, profile: any) {
-  const user = await this.authService.validateUser(profile, accessToken);
-  return user;
-}
+    const user = await this.authService.validateUser(profile, accessToken);
+    return user;
+  }
 }

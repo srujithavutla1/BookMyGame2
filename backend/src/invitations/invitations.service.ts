@@ -88,6 +88,8 @@ export class InvitationsService {
 
   async updateInvitationStatus(statusDto: InvitationStatusDto): Promise<Invitation[]> {
     const { recipientEmails, slotId, invitationStatus, isActive } = statusDto;
+    const slot = await this.slotsService.getSlotBySlotId(slotId);
+   
     const result = await this.invitationModel.updateMany(
       {
         slotId: slotId,
@@ -103,6 +105,63 @@ export class InvitationsService {
         }
       }
     ).exec();
+
+     if(invitationStatus==='accepted' as InvitationStatus||invitationStatus==='declined' as InvitationStatus){
+       const recipientEmail=slot?.heldBy;
+       const senderEmail=recipientEmails[0];
+       try {
+      const senderUser = await this.usersService.validateUserByEmail(senderEmail);
+      if (senderUser.microsoftAccessToken) {
+          const message = {
+              contentType: 'html',
+              content: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                  <h2 style="color: #464775; margin-bottom: 16px;">
+                    🎮 Invitation Response for ${slot?.gameId} Game Session
+                  </h2>
+                  <p style="margin-bottom: 16px;">
+                    <strong>${senderEmail}</strong> has <strong>${invitationStatus}</strong> your invitation to join the game session.
+                  </p>
+                  <div style="background-color: #f3f2f1; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+                    <h3 style="color: #464775; margin-top: 0; margin-bottom: 8px;">Slot Details:</h3>
+                    <ul style="margin-top: 0; padding-left: 20px;">
+                      <li><strong>Game ID:</strong> ${slot?.gameId}</li>
+                      <li><strong>Start Time:</strong> ${slot?.startTime}</li>
+                      <li><strong>End Time:</strong> ${slot?.endTime}</li>
+                    </ul>
+                  </div>
+                </div>
+              `,
+            };
+        try {
+            const recipient = await this.usersService.validateUserByEmail(recipientEmail!);
+            if (recipient?.microsoftAccessToken) {
+              const senderId = await this.graphService.getUserIdByEmail(
+                senderUser.microsoftAccessToken, 
+                senderUser.email
+              );
+              const chatId = await this.graphService.getOrCreateChat(
+                senderUser.microsoftAccessToken, 
+                senderId, 
+                recipientEmail!,
+                recipient.microsoftAccessToken
+              );
+              await this.graphService.sendMessage(
+                senderUser.microsoftAccessToken, 
+                chatId, 
+                message
+              );
+            }
+          } catch (error) {
+            console.error(`Failed to send notification to ${recipientEmail}:`, error);
+          }
+      }
+    }catch (error) {
+      console.error('Error while sending notifications:', error);
+    }
+
+
+    }
 
     return this.invitationModel.find({
       slotId: slotId,
@@ -137,21 +196,17 @@ export class InvitationsService {
 
     const createdInvitations = await this.invitationModel.insertMany(invitationsToCreate);
 
-    // Send notifications to each recipient
     try {
       const senderUser = await this.usersService.validateUserByEmail(senderEmail);
       if (senderUser.microsoftAccessToken) {
     
-        
-
-
 
         for (const dto of invitationsToCreate) {
           const message = {
         contentType: 'html',
         content: `
           <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-            <h2 style="color: #464775; margin-bottom: 16px;">🎉 Invitation to Join a Chess Game Session! 🎉</h2>
+            <h2 style="color: #464775; margin-bottom: 16px;">🎉 Invitation to Join a ${slot.gameId} Game Session! 🎉</h2>
             <p style="margin-bottom: 16px;">
               You've been invited to join a game session by <strong>${senderEmail}</strong>.
             </p>
