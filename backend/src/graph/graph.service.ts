@@ -80,15 +80,25 @@ export class GraphService {
   }
 
   // Send a message to a chat
-  async sendMessage(accessToken: string, chatId: string, message: string): Promise<void> {
+  // In your GraphService
+async sendMessage(accessToken: string, chatId: string, message: string | { contentType: string; content: string }): Promise<void> {
   const client = this.getGraphClient(accessToken);
-  const chatMessage = {
-    body: {
-      content: message,
-      contentType: 'text',
-    },
-  };
-  console.log(chatMessage);
+  
+  // Handle both string and object message formats
+  const chatMessage = typeof message === 'string' 
+    ? {
+        body: {
+          content: message,
+          contentType: 'text',
+        },
+      }
+    : {
+        body: {
+          content: message.content,
+          contentType: message.contentType as 'text' | 'html', // Type assertion
+        },
+      };
+
   try {
     await client.api(`/chats/${chatId}/messages`).post(chatMessage);
   } catch (error) {

@@ -9,6 +9,7 @@ import { SlotsModule } from './slots/slots.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventsModule } from './events/events.module'; // Add this import
 import { AuthModule } from './auth/auth.module';
+import { GraphModule } from './graph/graph.module';
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { AuthModule } from './auth/auth.module';
     InvitationsModule,
     SlotsModule,
     EventsModule,
-    AuthModule
+    AuthModule,
+    GraphModule
   ],
 })
 export class AppModule {}

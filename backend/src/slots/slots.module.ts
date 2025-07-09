@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Slot, SlotSchema } from './schemas/slot.schema';
 import { SlotsController } from './slots.controller';
@@ -11,6 +11,7 @@ import { User, UserSchema } from 'src/users/schemas/user.schema';
 import { Invitation, InvitationSchema } from 'src/invitations/schemas/invitation.schema';
 import { Game, GameSchema } from 'src/games/schemas/game.schema';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { InvitationsModule } from 'src/invitations/invitations.module';
 
 @Module({
   imports: [
@@ -20,13 +21,14 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
     MongooseModule.forFeature([{ name: Game.name, schema: GameSchema }]),
     UsersModule, 
     GamesModule,
+    forwardRef(()=>InvitationsModule)
   
     
   ],
   controllers: [SlotsController],
   providers: [SlotsService,SlotExpirationService],
  
-  // exports: [Slot], 
+  exports: [SlotsService], 
 })
 export class SlotsModule {}
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,7 +24,9 @@ export class InvitationsService {
 
     private readonly usersService: UsersService,
     private readonly graphService: GraphService,
-    
+    @Inject(forwardRef(() => SlotsService))
+    private readonly slotsService: SlotsService,
+
 
 
   ) {}
@@ -110,79 +112,105 @@ export class InvitationsService {
   }
 
 
-
   async createInvitations(createInvitationDtos: CreateInvitationDto[], senderEmail: string): Promise<Invitation[]> {
-  if (createInvitationDtos.length === 0) {
-    return [];
-  }
-  
-  // const slotId = createInvitationDtos[0].slotId;
+    if (createInvitationDtos.length === 0) {
+      return [];
+    }
+    
+    const slotId = createInvitationDtos[0].slotId;
+    const slot = await this.slotsService.getSlotBySlotId(slotId);
+    
+    if (!slot) {
+      throw new Error(`Slot with ID ${slotId} not found`);
+    }
 
- 
-  //  const slot =  await this.slotsService.getSlotBySlotId(slotId);
-  
-  // if (!slot) {
-  //   throw new Error(`Slot with ID ${slotId} not found`);
-  // }
+    const invitationsToCreate = createInvitationDtos.map(dto => ({
+      invitationId: uuidv4(),
+      slotId: dto.slotId,
+      recipientEmail: dto.recipientEmail,
+      senderEmail: senderEmail,
+      invitationStatus: 'pending' as InvitationStatus,
+      sentAt: slot.createdAt,
+      expiresAt: slot.expiresAt,
+      isActive: true,
+    }));
+
+    const createdInvitations = await this.invitationModel.insertMany(invitationsToCreate);
+
+    // Send notifications to each recipient
+    try {
+      const senderUser = await this.usersService.validateUserByEmail(senderEmail);
+      if (senderUser.microsoftAccessToken) {
+    
+        
 
 
-  const sentAt = new Date();
-  const expiresAt = new Date(sentAt.getTime() + 5 * 60 * 1000); //
-  const invitationsToCreate = createInvitationDtos.map(dto => ({
-    invitationId: uuidv4(),
-    slotId: dto.slotId,
-    recipientEmail: dto.recipientEmail,
-    senderEmail: senderEmail,
-    invitationStatus: 'pending' as InvitationStatus,
-    sentAt: sentAt,
-    expiresAt: expiresAt,
-    isActive: true,
-  }));
 
-  const createdInvitations = await this.invitationModel.insertMany(invitationsToCreate);
-
-  // Send notifications to each recipient
-  try {
-    const senderUser = await this.usersService.validateUserByEmail(senderEmail);
-    if (senderUser.microsoftAccessToken) {
-      const message = `You've been invited to join a game session by ${senderEmail}`;
-        // Slot Details:
-        // - Game ID: ${slot.gameId}
-        // - Start Time: ${slot.startTime}
-        // - End Time: ${slot.endTime}
-        // Please respond to the invitation.`;
-
-      for (const dto of createInvitationDtos) {
-        try {
-          const recipient = await this.usersService.validateUserByEmail(dto.recipientEmail);
-          if (recipient?.microsoftAccessToken) {
-            const senderId = await this.graphService.getUserIdByEmail(
-              senderUser.microsoftAccessToken, 
-              senderUser.email
-            );
-            const chatId = await this.graphService.getOrCreateChat(
-              senderUser.microsoftAccessToken, 
-              senderId, 
-              dto.recipientEmail,
-              recipient.microsoftAccessToken
-            );
-            await this.graphService.sendMessage(
-              senderUser.microsoftAccessToken, 
-              chatId, 
-              message
-            );
+        for (const dto of invitationsToCreate) {
+          const message = {
+        contentType: 'html',
+        content: `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <h2 style="color: #464775; margin-bottom: 16px;">🎉 Invitation to Join a Chess Game Session! 🎉</h2>
+            <p style="margin-bottom: 16px;">
+              You've been invited to join a game session by <strong>${senderEmail}</strong>.
+            </p>
+            <div style="background-color: #f3f2f1; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+              <h3 style="color: #464775; margin-top: 0; margin-bottom: 8px;">Slot Details:</h3>
+              <ul style="margin-top: 0; padding-left: 20px;">
+                <li><strong>Game ID:</strong> ${slot.gameId}</li>
+                <li><strong>Start Time:</strong> ${slot.startTime}</li>
+                <li><strong>End Time:</strong> ${slot.endTime}</li>
+              </ul>
+            </div>
+            <p style="margin-bottom: 16px;">
+              Please respond to the invitation to confirm your participation!
+            </p>
+            <a 
+              href="${process.env.FRONTEND_URL}/invitations?invitationId=${dto.invitationId}"
+              style="
+                display: inline-block;
+                padding: 8px 16px;
+                background-color: #464775;
+                color: white;
+                text-decoration: none;
+                border-radius: 4px;
+                font-weight: bold;
+              "
+            >
+              View Invitation
+            </a>
+          </div>
+        `
+      };
+          try {
+            const recipient = await this.usersService.validateUserByEmail(dto.recipientEmail);
+            if (recipient?.microsoftAccessToken) {
+              const senderId = await this.graphService.getUserIdByEmail(
+                senderUser.microsoftAccessToken, 
+                senderUser.email
+              );
+              const chatId = await this.graphService.getOrCreateChat(
+                senderUser.microsoftAccessToken, 
+                senderId, 
+                dto.recipientEmail,
+                recipient.microsoftAccessToken
+              );
+              await this.graphService.sendMessage(
+                senderUser.microsoftAccessToken, 
+                chatId, 
+                message
+              );
+            }
+          } catch (error) {
+            console.error(`Failed to send notification to ${dto.recipientEmail}:`, error);
           }
-        } catch (error) {
-          // Log error but don't fail the whole operation
-          console.error(`Failed to send notification to ${dto.recipientEmail}:`, error);
         }
       }
+    } catch (error) {
+      console.error('Error while sending notifications:', error);
     }
-  } catch (error) {
-    // Log error but don't fail the whole operation
-    console.error('Error while sending notifications:', error);
-  }
 
-  return createdInvitations;
-}
+    return createdInvitations;
+  }
 }

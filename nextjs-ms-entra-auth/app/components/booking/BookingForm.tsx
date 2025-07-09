@@ -37,10 +37,12 @@ export default function BookingForm({
   const [error, setError] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [invitations,setInvitations]=useState<Invitation[]>([]);
+  //const [invitations,setInvitations]=useState<Invitation[]>([]);
   const [oldRecipientEmails,setOldRecipientEmails]=useState<string[]>([]);//before edit
   const [newUsers,setNewUsers]=useState<User[]>([]);
   const isEditMode = slot.slotStatus === "on-hold" && slot.heldBy === userEmail;
+
+
   
    useEffect(() => {
     const loadUsers = async () => {
@@ -150,8 +152,8 @@ export default function BookingForm({
       const updatedUsers = await getUsers();
       
       setUsers(updatedUsers);
-      const createdAt = new Date().toISOString();
-      const expiresAt = new Date(Date.parse(createdAt) + 1 * 60 * 1000).toISOString();
+
+
       if(!isEditMode)
       {
           const newSlot: CreateSlot = {
@@ -168,6 +170,9 @@ export default function BookingForm({
         
         await updateSlotPeopleAdded(slot.slotId,newRecipientEmails.length + 1);
       }
+
+
+
     
       if (isEditMode){
    
@@ -186,20 +191,27 @@ export default function BookingForm({
         recipientEmail: participant,
       }));
       const createdInvitations=await createInvitations([...newInvitations]);
-      setInvitations(prev => [...prev, ...createdInvitations]);
+     // setInvitations(prev => [...prev, ...createdInvitations]);
   
       }
+
+
+
     
       else{
-          const newInvitations:CreateInvitation[] = newRecipientEmails.map(participant => ({
-            slotId: slot.slotId,
-            recipientEmail: participant,
-          }));
-          const createdInvitations=await createInvitations([...newInvitations]);
-          setInvitations(prev => [...prev, ...createdInvitations]);
-        }
+        const newInvitations:CreateInvitation[] = newRecipientEmails.map(participant => ({
+          slotId: slot.slotId,
+          recipientEmail: participant,
+        }));
+        const createdInvitations=await createInvitations([...newInvitations]);
+        //setInvitations(prev => [...prev, ...createdInvitations]);
+      }
+
+
       onSuccess();
       onClose();
+
+
     } catch (error) {
       console.error("Booking failed:", error);
       setError("Failed to complete booking. Please try again.");

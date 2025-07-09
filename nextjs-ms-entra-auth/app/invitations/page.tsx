@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { Invitation, InvitationStatus } from "@/app/types/invitation";
 import { Button } from "@/app/components/ui/Button";
 import { User } from "@/app/types/user";
@@ -23,12 +24,15 @@ export async function updateSlotParticipants(slot: Slot, change: number): Promis
 }
 
 export default function InvitationsPage() {
-const { user: authUser } = useAuth();  
+  const { user: authUser } = useAuth();  
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [slots, setSlots] = useState<{ [key: string]: Slot }>({});
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const highlightedInvitationId = searchParams.get('invitationId');
+  const invitationRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
 
   const fetchData = useCallback(async () => {
     if (!authUser?.email) return;
@@ -56,16 +60,33 @@ const { user: authUser } = useAuth();
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!loading && highlightedInvitationId) {
+      const timer = setTimeout(() => {
+        const element = invitationRefs.current[highlightedInvitationId];
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Add temporary flash animation
+          element.classList.add('ring-4', 'ring-blue-500');
+          setTimeout(() => {
+            element.classList.remove('ring-4', 'ring-blue-500');
+          }, 2000);
+        }
+      }, 100); // Small delay to ensure DOM is fully rendered
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, highlightedInvitationId]);
+
   const handleAccept = async (invitation: Invitation) => {
     try {
-   
-      const currentUser=await getUserByEmail(authUser?.email!);
+      const currentUser = await getUserByEmail(authUser?.email!);
       setUser(currentUser);
 
-      if(user?.chances!<=0){
-       setError('you dont have enough chances to accept this invitation');
-       return;
-
+      if (user?.chances! <= 0) {
+        setError('You don\'t have enough chances to accept this invitation');
+        return;
       }
      
       const currentInvitation = await getInvitationByInvitationId(invitation.invitationId.toString());
@@ -176,7 +197,12 @@ const { user: authUser } = useAuth();
             return (
               <div
                 key={invitation.invitationId}
-                className="border rounded-lg p-6 shadow-md bg-white"
+                ref={(el) => (invitationRefs.current[invitation.invitationId] = el)}
+                className={`border rounded-lg p-6 shadow-md bg-white transition-all duration-300 ${
+                  highlightedInvitationId === invitation.invitationId.toString() 
+                    ? 'ring-2 ring-blue-500' 
+                    : ''
+                }`}
               >
                 <div className="grid grid-cols-1 gap-4">
                   <div>
@@ -202,7 +228,7 @@ const { user: authUser } = useAuth();
                     {invitation.respondedAt && (
                       <p><span className="font-medium">Responded:</span> {new Date(invitation.respondedAt).toLocaleString()}</p>
                     )}
-                    <p><span className="font-medium">Expires:</span> {new Date(invitation.expiresAt).toLocaleString()}</p>
+                    <p><span className="font-medium">Expires:</span> {new Date(invitation.expiresAt!).toLocaleString()}</p>
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-gray-700 mb-2">Slot Details</h2>
