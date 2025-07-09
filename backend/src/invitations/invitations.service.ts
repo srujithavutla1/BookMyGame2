@@ -57,12 +57,14 @@ export class InvitationsService {
   }
 
   async getAllInvitationsByRecipientEmail(email: string): Promise<Invitation[]> {
-    return this.invitationModel.find({
+  return this.invitationModel
+    .find({
       recipientEmail: email,
-      ...this.getTodayFilter()
-    }).exec();
-  }
-
+      ...this.getTodayFilter(),
+    })
+    .sort({ sentAt: -1 }) 
+    .exec();
+}
   async getAllInvitationsBySlotId(slotId: string): Promise<Invitation[]> {
     return this.invitationModel.find({
       slotId: slotId,
