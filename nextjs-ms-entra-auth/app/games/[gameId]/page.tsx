@@ -131,7 +131,6 @@ export default function GamePage() {
       console.log(updatedSlot);
       setSlots(prevSlots => {
         const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime && s.endTime === updatedSlot.endTime);
-        //const slotIndex = prevSlots.findIndex(s => s.slotId===updatedSlot.slotId);
 
         if (slotIndex === -1) {
           return prevSlots;

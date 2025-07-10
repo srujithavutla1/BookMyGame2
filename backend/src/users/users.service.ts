@@ -82,30 +82,34 @@ export class UsersService {
   }
 
   async searchByEmail(query: string): Promise<SearchResponseDto[]> {
-   
+    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const safeQuery = escapeRegex(query);
 
-    const users = await this.userModel.find().exec();
-    const searchResults: TempSearchResult[] = [];
-    
-    users.forEach(user => {
+    const regex = new RegExp(`.*${safeQuery}.*\\.[^@]*@pal\\.tech$|^[^\\.]*\\..*${safeQuery}.*@pal\\.tech$`, 'i');
+
+    const users = await this.userModel
+      .find({ email: regex })
+      .select('email chances')
+      .exec();
+    console.log(users);
+
+    const searchResults = users.map(user => {
       const [namePart] = user.email.split('@');
       const [firstName, lastName] = namePart.split('.');
-      
+
       const firstNameIndex = firstName.toLowerCase().indexOf(query.toLowerCase());
       const lastNameIndex = lastName.toLowerCase().indexOf(query.toLowerCase());
-      
-      if (firstNameIndex !== -1 || lastNameIndex !== -1) {
-        console.log(firstName+" "+firstNameIndex+" "+lastName+" "+lastNameIndex);
-        searchResults.push({
-          email: user.email,
-          chances: user.chances,
-          matchIndex: Math.min(
-            firstNameIndex !== -1 ? firstNameIndex : Infinity,
-            lastNameIndex !== -1 ? lastNameIndex : Infinity
-          )
-        });
-      }
+
+      return {
+        email: user.email,
+        chances: user.chances,
+        matchIndex: Math.min(
+          firstNameIndex !== -1 ? firstNameIndex : Infinity,
+          lastNameIndex !== -1 ? lastNameIndex : Infinity
+        ),
+      };
     });
+
     return searchResults
       .sort((a, b) => a.matchIndex - b.matchIndex)
       .map(({ email, chances }) => ({ email, chances }));

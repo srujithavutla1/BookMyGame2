@@ -24,10 +24,10 @@ export class AuthService {
       email: email,
       chances: 3,
       isActive: true,
-      microsoftAccessToken: accessToken, // Store access token
+      microsoftAccessToken: accessToken, 
     });
   } else {
-    user.microsoftAccessToken = accessToken; // Update access token
+    user.microsoftAccessToken = accessToken; 
   }
   await user.save();
 
@@ -52,31 +52,7 @@ export class AuthService {
       return null;
     }
   }
-  async setPassword(email: string, password: string): Promise<User> {
-    if (password.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters');
-    }
-
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    const user = await this.userModel.findOneAndUpdate(
-      { email },
-      { password: hashedPassword, hasPassword:true},
-      { new: true }
-    ).exec();
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    return user;
-  }
-   async checkHasPassword(email: string): Promise<{ hasPassword: boolean }> {
-    const user = await this.userModel.findOne({ email }).select('hasPassword').exec();
-
-    return { hasPassword: user?.hasPassword || false };
-  }
+  
  
 async validateEmailPassword(email: string, password: string): Promise<User> {
   const user = await this.userModel.findOne({ email }).exec();
