@@ -24,7 +24,7 @@ export async function updateSlotParticipants(slot: Slot, change: number): Promis
 }
 
 export default function InvitationsPage() {
-  const { user: authUser } = useAuth();  
+  const { user: authUser } = useAuth();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [slots, setSlots] = useState<{ [key: string]: Slot }>({});
   const [user, setUser] = useState<User | null>(null);
@@ -32,7 +32,7 @@ export default function InvitationsPage() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const highlightedInvitationId = searchParams.get('invitationId');
-  const invitationRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
+  const invitationRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const fetchData = useCallback(async () => {
     if (!authUser?.email) return;
@@ -66,7 +66,7 @@ export default function InvitationsPage() {
         const element = invitationRefs.current[highlightedInvitationId];
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          
+
           // Add temporary flash animation
           element.classList.add('ring-4', 'ring-blue-500');
           setTimeout(() => {
@@ -88,9 +88,9 @@ export default function InvitationsPage() {
         setError('You don\'t have enough chances to accept this invitation');
         return;
       }
-     
+
       const currentInvitation = await getInvitationByInvitationId(invitation.invitationId.toString());
-      
+
       if (currentInvitation.invitationStatus !== 'pending') {
         setError('This invitation has already been processed, refresh the page to get new updates');
         setInvitations(prev =>
@@ -114,23 +114,23 @@ export default function InvitationsPage() {
       const slot = slots[invitation.slotId];
       if (slot) {
         await updateSlotParticipants(slot, 1);
-        setSlots(prev => ({ 
-          ...prev, 
-          [slot.slotId!]: { 
-            ...slot, 
-            peopleAccepted: slot.peopleAccepted! + 1 
-          } 
+        setSlots(prev => ({
+          ...prev,
+          [slot.slotId!]: {
+            ...slot,
+            peopleAccepted: slot.peopleAccepted! + 1
+          }
         }));
       }
 
       setInvitations(prev =>
         prev.map(inv => inv.invitationId === invitation.invitationId
-          ? { 
-              ...inv, 
-              invitationStatus: 'accepted', 
-              respondedAt: new Date().toISOString(), 
-              isActive: true
-            }
+          ? {
+            ...inv,
+            invitationStatus: 'accepted',
+            respondedAt: new Date().toISOString(),
+            isActive: true
+          }
           : inv
         )
       );
@@ -143,7 +143,7 @@ export default function InvitationsPage() {
   const handleDecline = async (invitation: Invitation) => {
     try {
       const currentInvitation = await getInvitationByInvitationId(invitation.invitationId.toString());
-      
+
       if (currentInvitation.invitationStatus !== 'pending') {
         setError('This invitation has already been processed');
         setInvitations(prev =>
@@ -164,12 +164,12 @@ export default function InvitationsPage() {
 
       setInvitations(prev =>
         prev.map(inv => inv.invitationId === invitation.invitationId
-          ? { 
-              ...inv, 
-              invitationStatus: 'declined', 
-              respondedAt: new Date().toISOString(), 
-              isActive: false 
-            }
+          ? {
+            ...inv,
+            invitationStatus: 'declined',
+            respondedAt: new Date().toISOString(),
+            isActive: false
+          }
           : inv
         )
       );
@@ -193,16 +193,15 @@ export default function InvitationsPage() {
           {invitations.map((invitation) => {
             const slot = slots[invitation.slotId];
             const isPendingAndActive = invitation.isActive && invitation.invitationStatus === 'pending';
-            
+
             return (
               <div
                 key={invitation.invitationId}
                 ref={(el) => (invitationRefs.current[invitation.invitationId] = el)}
-                className={`border rounded-lg p-6 shadow-md bg-white transition-all duration-300 ${
-                  highlightedInvitationId === invitation.invitationId.toString() 
-                    ? 'ring-2 ring-blue-500' 
+                className={`border rounded-lg p-6 shadow-md bg-white transition-all duration-300 ${highlightedInvitationId === invitation.invitationId.toString()
+                    ? 'ring-2 ring-blue-500'
                     : ''
-                }`}
+                  }`}
               >
                 <div className="grid grid-cols-1 gap-4">
                   <div>
@@ -211,15 +210,14 @@ export default function InvitationsPage() {
                     <p>
                       <span className="font-medium">Status:</span>{' '}
                       <span
-                        className={`inline-block px-2 py-1 rounded ${
-                          invitation.invitationStatus === 'pending'
+                        className={`inline-block px-2 py-1 rounded ${invitation.invitationStatus === 'pending'
                             ? 'bg-yellow-100 text-yellow-800'
                             : invitation.invitationStatus === 'accepted'
                               ? 'bg-green-100 text-green-800'
                               : invitation.invitationStatus === 'declined'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-gray-100 text-gray-800'
-                        }`}
+                          }`}
                       >
                         {invitation.invitationStatus.toUpperCase()}
                       </span>

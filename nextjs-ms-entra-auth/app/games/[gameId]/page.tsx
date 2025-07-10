@@ -22,13 +22,13 @@ import { v4 as uuidv4 } from 'uuid';
 export default function GamePage() {
 
   const { gameId } = useParams();
-  const { user} = useAuth();
+  const { user } = useAuth();
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [game, setGame] = useState<Game | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
 
   const fetchGame = async () => {
     try {
@@ -71,145 +71,153 @@ export default function GamePage() {
   }, [gameId, user?.email]);
 
   useEffect(() => {
-  const eventSourceOptions = { withCredentials: true };
+    const eventSourceOptions = { withCredentials: true };
 
-  const eventSource1 = new EventSource(`http://localhost:3001/events/slots/created?gameId=${gameId}`,eventSourceOptions);
-  eventSource1.onmessage = (event) => {
-    const updatedSlot = JSON.parse(event.data);
-     if (updatedSlot.gameId !== gameId) {
-      console.log("gameId not matched");
-      return;
-     }
-     setSlots(prevSlots => {
-      const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime&&s.endTime === updatedSlot.endTime);
-      if (slotIndex === -1) { 
-        return prevSlots;
+    //when confirmbooking, to get on-hold on all other slots
+    const eventSource1 = new EventSource(`http://localhost:3001/events/slots/created?gameId=${gameId}`, eventSourceOptions);
+    eventSource1.onmessage = (event) => {
+      const updatedSlot = JSON.parse(event.data);
+      if (updatedSlot.gameId !== gameId) {
+        console.log("gameId not matched");
+        return;
       }
-    
-      const newSlots = [...prevSlots];
-      newSlots[slotIndex] = updatedSlot;
-      return newSlots;
-    });
- 
-  }
+      setSlots(prevSlots => {
+        const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime && s.endTime === updatedSlot.endTime);
+        if (slotIndex === -1) {
+          return prevSlots;
+        }
 
-  const eventSource2 = new EventSource(`http://localhost:3001/events/slots/StatusUpdated?gameId=${gameId}`,eventSourceOptions);
-  eventSource2.onmessage = (event) => {
-    console.log("status updated");
-    const updatedSlot = JSON.parse(event.data);
-     if (updatedSlot.gameId !== gameId) {
-      console.log("gameId not matched");
-      return;
-     }
-     setSlots(prevSlots => {
-      const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime&&s.endTime === updatedSlot.endTime);
-      if (slotIndex === -1) { 
-        return prevSlots;
-      }
-      const newSlots = [...prevSlots];
-      newSlots[slotIndex] = updatedSlot;
-      return newSlots;
-    });
- 
-  }
-
-  const eventSource = new EventSource(`http://localhost:3001/events/slots/expired?gameId=${gameId}`,eventSourceOptions);
-  
-  eventSource.onmessage = (event) => {
-    console.log("expired event occured");
-    const updatedSlot = JSON.parse(event.data);
-     if (updatedSlot.gameId !== gameId) {
-      console.log("gameId not matched");
-      return
-    };
-     console.log(updatedSlot);
-    setSlots(prevSlots => {
-      const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime&&s.endTime === updatedSlot.endTime);
-     //const slotIndex = prevSlots.findIndex(s => s.slotId===updatedSlot.slotId);
-      
-      if (slotIndex === -1) {
-        return prevSlots;
-      }
-
-      const newSlots = [...prevSlots];
-      if (updatedSlot.slotStatus === 'booked' as SlotStatus) {
+        const newSlots = [...prevSlots];
         newSlots[slotIndex] = updatedSlot;
-      } else {
-        newSlots[slotIndex] = {
-          slotId: uuidv4(),
-          gameId: updatedSlot.gameId,
-          startTime: updatedSlot.startTime,
-          endTime: updatedSlot.endTime,
-          heldBy: updatedSlot.heldBy,
-        };
+        return newSlots;
+      });
+
+    }
+    //when slot is cancelled, on-hold badge should be removed in other accounts automatically
+    const eventSource2 = new EventSource(`http://localhost:3001/events/slots/StatusUpdated?gameId=${gameId}`, eventSourceOptions);
+    eventSource2.onmessage = (event) => {
+      console.log("status updated");
+      const updatedSlot = JSON.parse(event.data);
+      if (updatedSlot.gameId !== gameId) {
+        console.log("gameId not matched");
+        return;
       }
-      return newSlots;
-    });
-  };
+      setSelectedSlot(prev => {
+        return null;
+      });
+      setSlots(prevSlots => {
+        const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime && s.endTime === updatedSlot.endTime);
+        if (slotIndex === -1) {
+          return prevSlots;
+        }
+        const newSlots = [...prevSlots];
+        newSlots[slotIndex] = updatedSlot;
+        return newSlots;
+      });
 
-  eventSource.onerror = (error) => {
-    console.error('SSE Error:', error);
-    eventSource.close();
-  };
+    }
 
-  return () => {
-    eventSource.close();
-  };
-}, [gameId]);
+    //when expired to get booked/failed
+
+    const eventSource = new EventSource(`http://localhost:3001/events/slots/expired?gameId=${gameId}`, eventSourceOptions);
+
+    eventSource.onmessage = (event) => {
+      console.log("expired event occured");
+      const updatedSlot = JSON.parse(event.data);
+      if (updatedSlot.gameId !== gameId) {
+        console.log("gameId not matched");
+        return
+      };
+      console.log(updatedSlot);
+      setSlots(prevSlots => {
+        const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime && s.endTime === updatedSlot.endTime);
+        //const slotIndex = prevSlots.findIndex(s => s.slotId===updatedSlot.slotId);
+
+        if (slotIndex === -1) {
+          return prevSlots;
+        }
+        setSelectedSlot(prev => {
+          return null;
+        });
+        const newSlots = [...prevSlots];
+        if (updatedSlot.slotStatus === 'booked' as SlotStatus) {
+          newSlots[slotIndex] = updatedSlot;
+        } else {
+          newSlots[slotIndex] = {
+            slotId: uuidv4(),
+            gameId: updatedSlot.gameId,
+            startTime: updatedSlot.startTime,
+            endTime: updatedSlot.endTime,
+            heldBy: updatedSlot.heldBy,
+          };
+        }
+        return newSlots;
+      });
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE Error:', error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [gameId]);
 
 
-   const handleCancelSlot = async (slot: Slot) => {
+  const handleCancelSlot = async (slot: Slot) => {
     try {
-      
-      const updatedSlot=await updateSlotStatus(slot.slotId,"slot cancelled",false);
-     
+
+      const updatedSlot = await updateSlotStatus(slot.slotId, "slot cancelled", false);
+
       const [invitations, users] = await Promise.all([
         getInvitationsBySlotId(slot.slotId!),
         getUsers()
       ]);
-   
+
 
       const usersToUpdate: string[] = [];
       usersToUpdate.push(user!.email!);
-      
+
       const updatedInvitations = invitations.map((inv: Invitation) => {
         if (inv.invitationStatus === 'accepted') {
           let recipient = users.find((u: User) => u.email === inv.recipientEmail)!;
           usersToUpdate.push(recipient.email);
-          return { 
-            ...inv, 
+          return {
+            ...inv,
             invitationStatus: "slot cancelled" as InvitationStatus,
-            isActive: false, 
+            isActive: false,
           };
         } else {
           return {
             ...inv,
             invitationStatus: "slot cancelled" as InvitationStatus,
-            isActive: false, 
+            isActive: false,
           };
         }
       });
 
       await Promise.all([
         updateInvitations(updatedInvitations),
-        updateUserChances(usersToUpdate,-1),
-        
+        updateUserChances(usersToUpdate, -1),
+
       ]);
 
       const newSlotId = uuidv4();
-    
-      const newSlot:Slot={
-        slotId:newSlotId,
-        gameId:slot.gameId,
-        startTime:slot.startTime,
-        endTime:slot.endTime,
+
+      const newSlot: Slot = {
+        slotId: newSlotId,
+        gameId: slot.gameId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
         heldBy: slot.heldBy
       }
-     
-      setSlots(prevSlots => prevSlots.map(s => 
+
+      setSlots(prevSlots => prevSlots.map(s =>
         s.slotId === slot.slotId ? newSlot : s
       ));
-     
+
 
     } catch (error) {
       console.error('Failed to cancel slot:', error);
@@ -288,7 +296,7 @@ export default function GamePage() {
                 game={game}
                 userEmail={user?.email!}
                 onClose={() => setSelectedSlot(null)}
-                onSuccess={fetchSlots} 
+                onSuccess={fetchSlots}
               />
             </div>
           </div>

@@ -11,6 +11,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 export class SlotsController {
   constructor(private readonly slotsService: SlotsService) {}
 
+  //use dynamic routes
   @Get('getAll')
   async getAll(): Promise<Slot[]|null> {  
     return this.slotsService.getAllSlots();

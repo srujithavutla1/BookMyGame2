@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, Patch, UseGuards, BadRequestException } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { UserChancesDto } from './dtos/userChancesDto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { SearchResponseDto } from './dtos/searchResponseDto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -30,5 +31,12 @@ export class UsersController {
       updateUserChancesDto.emails,
       updateUserChancesDto.chances
     );
+  }
+  @Get('search')
+  async searchByName(@Query('query') query: string): Promise<SearchResponseDto[]> {
+    if (!query) {
+      throw new BadRequestException('Search query is required');
+    }
+    return this.usersService.searchByEmail(query);
   }
 }

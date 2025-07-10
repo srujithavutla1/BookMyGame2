@@ -6,7 +6,10 @@ export interface User {
   chances: number;
   lastChanceUpdatedAt:string;
 }
-
+export interface UserEmailAndChances {
+  email: string;
+  chances: number;
+}
 export interface UserActivity {
   type: "booking" | "invitation" | "participation";
   status: "confirmed" | "pending" | "cancelled" | "failed";

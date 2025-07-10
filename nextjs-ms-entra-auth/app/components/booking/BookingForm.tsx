@@ -1,25 +1,26 @@
 "use client";
 import { CreateSlot, Slot } from "@/app/types/booking";
 import { Game } from "@/app/types/game";
-import { User } from "@/app/types/user";
-import { CreateInvitation, Invitation, InvitationStatus } from "@/app/types/invitation";
+import { UserEmailAndChances } from "@/app/types/user";
+import { CreateInvitation } from "@/app/types/invitation";
 import { useState, useEffect } from "react";
 import { Button } from "../ui/Button";
-import { getUserByEmail, getUsers, updateUserChances, updateUsers} from "@/app/services/userService";
-import {  createInvitations, getInvitationBySlotIdAndRecipientEmail, getInvitationsBySlotId,  updateInvitations, updateInvitationStatus } from "@/app/services/invitationService";
-import {  createSlot,  getSlotsByGameId,  getSlotStatus,  updateSlotPeopleAdded } from "@/app/services/slotService";
+import { getUserByEmail, getUsers, getUsersBySearchQuery, updateUserChances, } from "@/app/services/userService";
+import { createInvitations, getInvitationBySlotIdAndRecipientEmail, getInvitationsBySlotId, updateInvitationStatus } from "@/app/services/invitationService";
+import { createSlot, getSlotStatus, updateSlotPeopleAdded } from "@/app/services/slotService";
 import { Trash2 } from "lucide-react";
-import { v4 as uuidv4 } from 'uuid';
+import { useDebounce } from "@/app/utils/useDebounce";
 interface BookingFormProps {
   slot: Slot;
   game: Game;
   userEmail: string;
   onClose: () => void;
-  onSuccess: () => void; 
+  onSuccess: () => void;
 }
+//intersection
 const findCommonParticipants = (arr1: string[], arr2: string[]): string[] => {
-  return arr1.filter(a1 => 
-    arr2.some(a2 => a1===a2)
+  return arr1.filter(a1 =>
+    arr2.some(a2 => a1 === a2)
   );
 };
 
@@ -32,33 +33,25 @@ export default function BookingForm({
 }: BookingFormProps) {
   const [newRecipientEmails, setNewRecipientEmails] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserEmailAndChances[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [oldRecipientEmails,setOldRecipientEmails]=useState<string[]>([]);//before edit
-  const [newUsers,setNewUsers]=useState<User[]>([]);
+  const [oldRecipientEmails, setOldRecipientEmails] = useState<string[]>([]);//before edit
   const isEditMode = slot.slotStatus === "on-hold" && slot.heldBy === userEmail;
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-
-  
-   useEffect(() => {
+  useEffect(() => {
     const loadUsers = async () => {
       try {
-         const fetchedUsers = await getUsers();
-        setUsers(fetchedUsers);
-        
         if (isEditMode) {
-         const invitations = await getInvitationsBySlotId(slot.slotId);
+          const invitations = await getInvitationsBySlotId(slot.slotId);
           const participantEmails = invitations
             .filter(inv => inv.isActive)
             .map(inv => inv.recipientEmail);
-          
-          const existingUsers = fetchedUsers.filter(user => 
-            participantEmails.includes(user.email)
-          );
-          setNewUsers(existingUsers);
+
+
           setOldRecipientEmails(participantEmails);//constant in edit mode
           setNewRecipientEmails(participantEmails);//changes in edit mode
         }
@@ -69,28 +62,42 @@ export default function BookingForm({
         setIsLoading(false);
       }
     };
-    
+
     loadUsers();
   }, [isEditMode, userEmail]);
 
   useEffect(() => {
-    if (users.length === 0) return;
-    
-    const filtered = users.filter(
-      (user) =>
-        user.email !== userEmail &&
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !newRecipientEmails.some(p => p === user.email)
-    );
-    setFilteredUsers(filtered);
-  }, [searchQuery, userEmail, users, newRecipientEmails]);
+    const searchUsers = async () => {
+      if (!debouncedSearchQuery) {
+        setFilteredUsers([]);
+        return;
+      }
 
-  const handleAddParticipant = (user: User) => {
+      try {
+        setIsSearching(true);
+        const searchResults = await getUsersBySearchQuery(debouncedSearchQuery);
+        const filtered = searchResults.filter(
+          user =>
+            user.email !== userEmail &&
+            !newRecipientEmails.includes(user.email)
+        );
+        setFilteredUsers(filtered);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setFilteredUsers([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    searchUsers();
+  }, [debouncedSearchQuery, userEmail, newRecipientEmails]);
+
+  const handleAddParticipant = (user: UserEmailAndChances) => {
     if (newRecipientEmails.length >= game.maxPlayers - 1) {
       setError(`Maximum ${game.maxPlayers} players allowed`);
       return;
     }
-    setNewUsers([...newUsers,user]);
     setNewRecipientEmails([...newRecipientEmails, user.email]);
     setSearchQuery("");
     setError("");
@@ -99,8 +106,8 @@ export default function BookingForm({
   const handleRemoveParticipant = async (email: string) => {
     if (isEditMode) {
       try {
-        const invitation = await getInvitationBySlotIdAndRecipientEmail(slot.slotId,email);
-        if (invitation.invitationStatus=='accepted') {
+        const invitation = await getInvitationBySlotIdAndRecipientEmail(slot.slotId, email);
+        if (invitation.invitationStatus == 'accepted') {
           setError('Cannot remove participant - they have accepted the invitation');
           return;
         }
@@ -116,15 +123,14 @@ export default function BookingForm({
       setNewRecipientEmails(newRecipientEmails.filter((p) => p !== email));
       setError("");
     }
-    setNewUsers(newUsers.filter((cu)=>cu.email!=email));
   };
 
   const handleSubmit = async () => {
-    const isBooked=await getSlotStatus(game.gameId,slot.startTime,slot.endTime);
+    const isBooked = await getSlotStatus(game.gameId, slot.startTime, slot.endTime);
 
-    if(isBooked&&!isEditMode){
-    setError("The slot you were trying to book is on hold or booked, please try booking other slot ");
-    return;
+    if (isBooked && !isEditMode) {
+      setError("The slot you were trying to book is on hold or booked, please try booking other slot ");
+      return;
     }
 
     if (!isEditMode) {
@@ -147,15 +153,8 @@ export default function BookingForm({
       if (!isEditMode) {
         await updateUserChances([userEmail], -1);
       }
-    
-      const updatedUsers = await getUsers();
-      
-      setUsers(updatedUsers);
-
-
-      if(!isEditMode)
-      {
-          const newSlot: CreateSlot = {
+      if (!isEditMode) {
+        const newSlot: CreateSlot = {
           slotId: slot.slotId,
           gameId: slot.gameId,
           startTime: slot.startTime,
@@ -163,53 +162,39 @@ export default function BookingForm({
           peopleAdded: newRecipientEmails.length + 1,
           heldBy: slot.heldBy
         }
-          await createSlot(newSlot);
+        await createSlot(newSlot);
       }
-      else{
-        
-        await updateSlotPeopleAdded(slot.slotId,newRecipientEmails.length + 1);
+      else {
+
+        await updateSlotPeopleAdded(slot.slotId, newRecipientEmails.length + 1);
       }
-
-
-
-    
-      if (isEditMode){
-   
+      if (isEditMode) {
         const commonParticipants = findCommonParticipants(newRecipientEmails, oldRecipientEmails);
-         const participantsToCancel = oldRecipientEmails.filter(participant => 
-          !commonParticipants?.some(common => participant===common)
+        const participantsToCancel = oldRecipientEmails.filter(participant =>
+          !commonParticipants?.some(common => participant === common)
         );
-       
-        await updateInvitationStatus(participantsToCancel,slot.slotId,"slot cancelled",false);
-        const participantsToCreate = newRecipientEmails.filter(current => 
-          !commonParticipants?.some(common => current===common)
+
+        await updateInvitationStatus(participantsToCancel, slot.slotId, "slot cancelled", false);
+        const participantsToCreate = newRecipientEmails.filter(current =>
+          !commonParticipants?.some(common => current === common)
         );
-      
-        const newInvitations:CreateInvitation[] = participantsToCreate.map(participant => ({
-        slotId: slot.slotId,
-        recipientEmail: participant,
-      }));
-      const createdInvitations=await createInvitations([...newInvitations]);
-     // setInvitations(prev => [...prev, ...createdInvitations]);
-  
-      }
 
-
-
-    
-      else{
-        const newInvitations:CreateInvitation[] = newRecipientEmails.map(participant => ({
+        const newInvitations: CreateInvitation[] = participantsToCreate.map(participant => ({
           slotId: slot.slotId,
           recipientEmail: participant,
         }));
-        const createdInvitations=await createInvitations([...newInvitations]);
-        //setInvitations(prev => [...prev, ...createdInvitations]);
+        const createdInvitations = await createInvitations([...newInvitations]);
+
       }
-
-
+      else {
+        const newInvitations: CreateInvitation[] = newRecipientEmails.map(participant => ({
+          slotId: slot.slotId,
+          recipientEmail: participant,
+        }));
+        const createdInvitations = await createInvitations([...newInvitations]);
+      }
       onSuccess();
       onClose();
-
 
     } catch (error) {
       console.error("Booking failed:", error);
@@ -242,7 +227,11 @@ export default function BookingForm({
           disabled={isSubmitting}
         />
 
-        {searchQuery && filteredUsers.length > 0 && (
+        {isSearching && (
+          <div className="mt-2 text-sm text-gray-500">Searching...</div>
+        )}
+
+        {searchQuery && !isSearching && filteredUsers.length > 0 && (
           <ul className="mt-2 border rounded-md max-h-40 overflow-y-auto">
             {filteredUsers.map((user) => (
               <li
@@ -251,7 +240,7 @@ export default function BookingForm({
                 onClick={() => handleAddParticipant(user)}
               >
                 <span>
-                  {user.name} ({user.email}) - Chances: {user.chances}
+                  ({user.email}) - Chances: {user.chances}
                 </span>
               </li>
             ))}
@@ -264,23 +253,17 @@ export default function BookingForm({
           Current Participants:
         </h3>
         <ul className="space-y-2">
-          <li className="p-2 bg-blue-50 rounded-md flex justify-between items-center">
-            <span>You (Organizer) - Chances: {
-              users.find(u => u.email === userEmail)?.chances || 0
-            }</span>
-          </li>
-          {newUsers.map((user) => (
+
+          {newRecipientEmails.map((email) => (
             <li
-              key={user.email}
+              key={email}
               className="p-2 bg-gray-50 rounded-md flex justify-between items-center"
             >
               <span>
-                {user.name} ({user.email}) - Chances: {
-                  users.find(u => u.email === user.email)?.chances || 0
-                }
+                ({email})
               </span>
               <button
-                onClick={() => handleRemoveParticipant(user.email)}
+                onClick={() => handleRemoveParticipant(email)}
                 className="text-red-500 hover:text-red-700"
                 disabled={isSubmitting}
               >
@@ -294,16 +277,16 @@ export default function BookingForm({
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <div className="flex justify-end space-x-2">
-        <Button 
-          variant="secondary" 
+        <Button
+          variant="secondary"
           onClick={onClose}
           disabled={isSubmitting}
         >
           Cancel
         </Button>
 
-        <Button 
-          onClick={handleSubmit} 
+        <Button
+          onClick={handleSubmit}
           disabled={isSubmitting || isLoading}
         >
           {isSubmitting ? "Processing..." : isEditMode ? "Update Booking" : "confirm booking"}

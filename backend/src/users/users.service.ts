@@ -3,6 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from './schemas/user.schema';
 import { Cron } from '@nestjs/schedule';
+import { SearchResponseDto } from './dtos/searchResponseDto';
+
+// Temporary interface for internal processing
+interface TempSearchResult extends SearchResponseDto {
+  
+  matchIndex: number;
+}
 
 @Injectable()
 export class UsersService {
@@ -12,11 +19,10 @@ export class UsersService {
     return this.userModel.find().exec();
   }
 
-  async findOne(email: string): Promise<User|null> {
-    return this.userModel.findOne({email}).exec();
+  async findOne(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
   }
 
- 
   async update(users: User[]): Promise<User[]> {
     const operations = users.map(user => ({
       updateOne: {
@@ -73,5 +79,35 @@ export class UsersService {
       console.error('Failed to reset user chances:', error);
       throw error;
     }
+  }
+
+  async searchByEmail(query: string): Promise<SearchResponseDto[]> {
+   
+
+    const users = await this.userModel.find().exec();
+    const searchResults: TempSearchResult[] = [];
+    
+    users.forEach(user => {
+      const [namePart] = user.email.split('@');
+      const [firstName, lastName] = namePart.split('.');
+      
+      const firstNameIndex = firstName.toLowerCase().indexOf(query.toLowerCase());
+      const lastNameIndex = lastName.toLowerCase().indexOf(query.toLowerCase());
+      
+      if (firstNameIndex !== -1 || lastNameIndex !== -1) {
+        console.log(firstName+" "+firstNameIndex+" "+lastName+" "+lastNameIndex);
+        searchResults.push({
+          email: user.email,
+          chances: user.chances,
+          matchIndex: Math.min(
+            firstNameIndex !== -1 ? firstNameIndex : Infinity,
+            lastNameIndex !== -1 ? lastNameIndex : Infinity
+          )
+        });
+      }
+    });
+    return searchResults
+      .sort((a, b) => a.matchIndex - b.matchIndex)
+      .map(({ email, chances }) => ({ email, chances }));
   }
 }
