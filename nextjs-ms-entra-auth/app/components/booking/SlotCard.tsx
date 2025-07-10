@@ -89,6 +89,7 @@ export default function SlotCard({ slot, game, onSelect, onCancel }: SlotCardPro
           </Button>
         ) : status === "on-hold-by-you" as SlotStatus ? (
           <>
+          <div className="flex gap-3">
             <Button
               variant="danger"
               onClick={() => handleCancel(slot)}
@@ -97,7 +98,7 @@ export default function SlotCard({ slot, game, onSelect, onCancel }: SlotCardPro
             >
               Cancel
             </Button>
-            
+
             <Button 
               variant="primary" 
               onClick={() => onSelect(slot)}
@@ -105,6 +106,7 @@ export default function SlotCard({ slot, game, onSelect, onCancel }: SlotCardPro
             >
               Edit
             </Button>
+          </div>
           </>
         ) : null}
       </div>
