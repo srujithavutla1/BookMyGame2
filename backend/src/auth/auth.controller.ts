@@ -26,7 +26,7 @@ export class AuthController {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 60 * 1000, 
+    maxAge:  3600000 
   });
 
     res.redirect('http://localhost:3000/login/success');

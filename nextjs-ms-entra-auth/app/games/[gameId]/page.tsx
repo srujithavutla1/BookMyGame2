@@ -81,6 +81,9 @@ export default function GamePage() {
         console.log("gameId not matched");
         return;
       }
+      setSelectedSlot(prev => {
+        return null;
+      });
       setSlots(prevSlots => {
         const slotIndex = prevSlots.findIndex(s => s.startTime === updatedSlot.startTime && s.endTime === updatedSlot.endTime);
         if (slotIndex === -1) {

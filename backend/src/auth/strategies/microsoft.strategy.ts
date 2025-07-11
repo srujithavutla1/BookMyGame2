@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-microsoft';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
+import { User } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') {
@@ -19,8 +20,8 @@ export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') {
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: any) {
-    const user = await this.authService.validateUser(profile, accessToken);
+  async validate(accessToken: string, refreshToken: string, profile: any) : Promise<User>{
+    const user = await this.authService.validateUser(profile, accessToken,refreshToken);
     return user;
   }
 }

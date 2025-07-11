@@ -1,7 +1,6 @@
 import { Slot } from "@/app/types/booking";
 import SlotCard from "./SlotCard";
 import { Game } from "@/app/types/game";
-import { useEffect } from "react";
 
 interface SlotsListProps {
   slots: Slot[];
@@ -10,20 +9,18 @@ interface SlotsListProps {
   onCancelSlot: (slot: Slot) => void;
 }
 
-export default function SlotsList({ slots, game, onSelectSlot,onCancelSlot}: SlotsListProps) {
+export default function SlotsList({ slots, game, onSelectSlot, onCancelSlot }: SlotsListProps) {
   return (
-    <div className="space-y-4">
-      {
-        slots.map((slot) => (
-          <SlotCard
-            key={slot.slotId}
-            slot={slot}
-            game={game}
-            onSelect={onSelectSlot}
-            onCancel={onCancelSlot}
-          />
-        ))
-      }
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {slots.map((slot) => (
+        <SlotCard
+          key={slot.slotId}
+          slot={slot}
+          game={game}
+          onSelect={onSelectSlot}
+          onCancel={onCancelSlot}
+        />
+      ))}
     </div>
   );
 }

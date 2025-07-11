@@ -1,4 +1,3 @@
-// components/ui/Button.tsx
 import { cn } from "@/app/utils/cn";
 
 type ButtonVariant = "default" | "primary" | "danger" | "secondary" | "ghost" | "microsoft";
@@ -6,10 +5,12 @@ type ButtonVariant = "default" | "primary" | "danger" | "secondary" | "ghost" | 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   isLoading?: boolean;
+  size?: "sm" | "md" | "lg"; // Added size prop
 }
 
 export function Button({
   variant = "default",
+  size = "md", // Default size
   className,
   isLoading = false,
   children,
@@ -24,11 +25,18 @@ export function Button({
     microsoft: "bg-[#2F2F2F] text-white hover:bg-[#1E1E1E] focus:ring-[#2F2F2F]"
   };
 
+  const sizeClasses = {
+    sm: "px-2 py-1 text-sm",
+    md: "px-3 py-1.5 text-sm",
+    lg: "px-4 py-2 text-base"
+  };
+
   return (
     <button
       className={cn(
-        "px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+        "rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
         variantClasses[variant],
+        sizeClasses[size],
         className,
         isLoading && "opacity-70 cursor-not-allowed"
       )}

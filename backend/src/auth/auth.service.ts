@@ -12,7 +12,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(profile: any, accessToken: string): Promise<User> {
+  async validateUser(profile: any, accessToken: string,refreshToken:string): Promise<User> {
   const { displayName, emails, id } = profile;
   const email = emails[0].value;
 
@@ -25,9 +25,11 @@ export class AuthService {
       chances: 3,
       isActive: true,
       microsoftAccessToken: accessToken, 
+      microsoftRefreshToken:refreshToken
     });
   } else {
     user.microsoftAccessToken = accessToken; 
+    user.microsoftRefreshToken=refreshToken
   }
   await user.save();
 

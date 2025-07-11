@@ -42,6 +42,9 @@ export class User extends Document {
 
   @Prop({ default: null })
   microsoftAccessToken: string;
+
+  @Prop({ default: null })
+  microsoftRefreshToken: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

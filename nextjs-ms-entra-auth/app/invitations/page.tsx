@@ -67,13 +67,12 @@ export default function InvitationsPage() {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-          // Add temporary flash animation
           element.classList.add('ring-4', 'ring-blue-500');
           setTimeout(() => {
             element.classList.remove('ring-4', 'ring-blue-500');
           }, 2000);
         }
-      }, 100); // Small delay to ensure DOM is fully rendered
+      }, 100); 
 
       return () => clearTimeout(timer);
     }

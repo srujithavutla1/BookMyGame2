@@ -23,7 +23,6 @@ export default function SlotCard({ slot, game, onSelect, onCancel }: SlotCardPro
   const { currentUser } = useUsers(); 
   const [isCancelling, setIsCancelling] = useState(false);
   const [isAllowedTime, setIsAllowedTime] = useState(false);
- // console.log(slot);
   
   useEffect(() => {
   
@@ -89,7 +88,7 @@ export default function SlotCard({ slot, game, onSelect, onCancel }: SlotCardPro
           </Button>
         ) : status === "on-hold-by-you" as SlotStatus ? (
           <>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <Button
               variant="danger"
               onClick={() => handleCancel(slot)}
