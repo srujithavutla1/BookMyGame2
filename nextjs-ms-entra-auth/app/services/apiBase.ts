@@ -8,7 +8,6 @@ type RequestOptions = {
     tags?: string[];
   };
 };
-
 async function fetchData<T>(
   endpoint: string,
   options: RequestOptions = {}

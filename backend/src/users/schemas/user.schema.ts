@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 @Schema()
 export class User extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   userId: string;
 
   @Prop({ required: true })
@@ -15,26 +15,19 @@ export class User extends Document {
   @Prop({ default: 3 })
   chances: number;
 
-  @Prop()
-  lastChanceUpdatedAt: Date;
-
   @Prop({ default: true })
   isActive: boolean;
 
-  @Prop({ default: Date.now })
-  createdAt: Date;
-
-  @Prop({ default: null })
+  @Prop()
   microsoftAccessToken: string;
 
-  @Prop({ default: null })
+  @Prop()
   microsoftRefreshToken: string;
 
-  @Prop({ 
-    type: String, 
-    enum: ['admin', 'user'], 
-    default: 'user'
-  })
+  @Prop()
+  refreshToken: string;
+
+  @Prop()
   role: string;
 }
 

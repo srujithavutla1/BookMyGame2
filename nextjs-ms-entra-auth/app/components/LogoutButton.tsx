@@ -2,6 +2,8 @@
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/Button";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { logout } from "../services/authService";
 
 function LogoutButton() {
   const router = useRouter();
@@ -10,12 +12,8 @@ function LogoutButton() {
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/auth/logout', {
-        method: 'GET',
-        credentials: 'include',
-      });
-      
-      if (response.ok) {
+      const response = await logout();
+      if (response.success) {
         router.push('/login');
       }
     } catch (error) {

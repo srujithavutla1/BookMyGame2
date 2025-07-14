@@ -1,4 +1,3 @@
-// services/authService.ts
 import { apiBase } from "./apiBase";
 
 export type UserProfile = {
@@ -9,6 +8,11 @@ export type UserProfile = {
 export type LoginResponse = {
   success: boolean;
   message?: string;
+};
+
+export type TokenResponse = {
+  access_token: string;
+  refresh_token: string;
 };
 
 export const getProfile = async (): Promise<UserProfile> => {
@@ -44,24 +48,11 @@ export const checkAuth = async (): Promise<boolean> => {
   }
 };
 
-export const hasPassword = async (): Promise<boolean> => {
+export const refreshAccessToken = async (refreshToken: string): Promise<TokenResponse> => {
   try {
-    const response = await apiBase.get<{ hasPassword: boolean }>('/auth/has-password');
-    return response.hasPassword;
-  } catch (error) {
-    console.error('Error checking password status:', error);
-    return false;
-  }
-};
-
-export const setUserPassword = async (password: string): Promise<{ success: boolean; message?: string }> => {
-  try {
-    const response = await apiBase.post<{ success: boolean }>('/auth/set-password', { password });
+    const response = await apiBase.post<TokenResponse>('/auth/refresh', { refresh_token: refreshToken });
     return response;
   } catch (error: any) {
-    return { 
-      success: false, 
-      message: error.message || 'Failed to set password' 
-    };
+    throw new Error(error.message || 'Failed to refresh token');
   }
 };

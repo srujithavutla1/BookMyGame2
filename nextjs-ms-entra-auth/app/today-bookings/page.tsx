@@ -220,7 +220,7 @@ export default function TodayBookings() {
             
             {!loading && slots.length > 0 && (
               <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Bookings</h2>
+
                 <div className="space-y-4">
                   {slots.map((slot) => (
                     <div key={slot.slotId} className="border rounded-md p-4">

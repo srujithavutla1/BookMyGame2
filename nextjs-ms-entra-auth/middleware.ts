@@ -1,9 +1,8 @@
-// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const protectedRoutes = ['/BookMyGame', '/profile', '/bookings', '/invitations', '/setPassword', '/games/:path*'];
-const adminRoutes = ['/today-bookings']; // Add admin-only routes here
+const adminRoutes = ['/today-bookings'];
 const authPageRoutes = ['/login'];
 const apiAuthPrefix = '/api/auth';
 const rootRedirectPath = '/BookMyGame';
@@ -36,10 +35,45 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!authResponse.ok) {
+      // Try to refresh the token
+      const refreshToken = request.cookies.get('refresh_token')?.value;
+      if (refreshToken) {
+        try {
+          const refreshResponse = await fetch('http://localhost:3001/auth/refresh', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Cookie: request.headers.get('Cookie') || '',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+
+          if (refreshResponse.ok) {
+            const { access_token, refresh_token } = await refreshResponse.json();
+            const response = NextResponse.next();
+            response.cookies.set('access_token', access_token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict',
+              maxAge: 3600000,
+            });
+            response.cookies.set('refresh_token', refresh_token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict',
+              maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+            return response;
+          }
+        } catch (error) {
+          console.error('Token refresh failed:', error);
+        }
+      }
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Additional check for admin routes
+   
     if (isAdminRoute) {
       const user = await authResponse.json();
       if (user.role !== 'admin') {
