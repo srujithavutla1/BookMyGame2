@@ -270,4 +270,12 @@ export class InvitationsService {
 
     return createdInvitations;
   }
+
+  async getAllInvitationsBySlotIds(slotIds: string[], status?: InvitationStatus): Promise<Invitation[]> {
+  const filter: any = { slotId: { $in: slotIds } };
+  if (status) {
+    filter.invitationStatus = status;
+  }
+  return this.invitationModel.find(filter).exec();
+}
 }

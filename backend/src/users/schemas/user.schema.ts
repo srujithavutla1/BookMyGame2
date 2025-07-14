@@ -12,22 +12,6 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({
-    default: null,
-    required: false,
-    validate: {
-      validator: function(v: string) {
-        if (!v) return true; 
-        return v.length >= 8;
-      },
-      message: 'Password must be at least 8 characters long'
-    }
-  })
-  password: string;
-
-  @Prop({ default: false })
-  hasPassword: boolean;
-
   @Prop({ default: 3 })
   chances: number;
 
@@ -45,6 +29,13 @@ export class User extends Document {
 
   @Prop({ default: null })
   microsoftRefreshToken: string;
+
+  @Prop({ 
+    type: String, 
+    enum: ['admin', 'user'], 
+    default: 'user'
+  })
+  role: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

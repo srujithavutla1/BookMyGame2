@@ -18,7 +18,7 @@ export default function UserStats({ currentUser }: UserStatsProps) {
       </div>
       <Link href="/bookings">
         <div className="bg-white p-4 rounded-lg shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500">Today's Bookings</h3>
+          <h3 className="text-sm font-medium text-gray-500">Your Bookings</h3>
           <p className="text-2xl font-bold"> ................</p>
         </div>
       </Link>
@@ -28,6 +28,14 @@ export default function UserStats({ currentUser }: UserStatsProps) {
           {(currentUser?.chances ?? 0) > 0 ? "Active" : "Limit Reached"}
         </Badge>
       </div>
+      {currentUser?.role === 'admin' && (
+        <Link href="/today-bookings">
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h3 className="text-sm font-medium text-gray-500">Today's Bookings</h3>
+            <p className="text-2xl font-bold"> ................</p>
+          </div>
+        </Link>
+      )}
     </div>
   );
 }

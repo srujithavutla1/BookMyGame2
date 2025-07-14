@@ -1,5 +1,5 @@
-// services/slotService.ts
 import { CreateSlot, Slot, SlotStatus } from "../types/booking";
+import { Invitation } from "../types/invitation";
 import { apiBase } from "./apiBase";
 
 export const getSlots = async (): Promise<Slot[]> => {
@@ -61,4 +61,14 @@ export const getSlotStatus = async (
 
 export const getAllSlotsByInvitationRecipientEmail = async (email: string): Promise<Slot[]> => {
   return apiBase.get<Slot[]>(`/slots/getAllSlotsByInvitationRecipientEmail?recipientEmail=${email}`);
+};
+
+export const getSlotsAndInvitationsByGameId = async (
+  gameId: string,
+  startTime: string,
+  endTime: string
+): Promise<{ slots: Slot[]; invitations: Invitation[] }> => {
+  return apiBase.get<{ slots: Slot[]; invitations: Invitation[] }>(
+    `/slots/SlotsAndInvitationsByGameId?gameId=${gameId}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`
+  );
 };

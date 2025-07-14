@@ -5,6 +5,9 @@ import { SlotDto } from './dtos/slot.dto';
 import { SlotPeopleAddedDto } from './dtos/SlotPeopleAdded.dto';
 import { SlotStatusDto } from './dtos/slotStatus.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Invitation } from 'src/invitations/schemas/invitation.schema';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('slots')
 
@@ -41,6 +44,18 @@ export class SlotsController {
   {
     return this.slotsService.getAllSlotsByGameId(gameId);
   }
+  @Get('SlotsAndInvitationsByGameId')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+   @Get('SlotsAndInvitationsByGameId')
+  async SlotsAndInvitationsByGameId(@Query('gameId') gameId: string,@Query('startTime') startTime: string,@Query('endTime') endTime: string):Promise<{
+  slots: Slot[];
+  invitations: Invitation[];
+}>
+  {
+
+    return this.slotsService.SlotsAndInvitationsByGameId(gameId,startTime,endTime);
+  }
   @Get('getSlotStatus')
   async getSlotStatus(@Query('gameId') gameId: string,@Query('startTime') startTime: string,@Query('endTime') endTime: string):Promise<Boolean>
   {
@@ -66,4 +81,6 @@ export class SlotsController {
   async createOrUpdate(@Body() slots: Slot[]): Promise<Slot[]> {
     return this.slotsService.createOrUpdateSlots(slots);
   }
+
+
 }

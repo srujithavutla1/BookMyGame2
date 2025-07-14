@@ -12,9 +12,11 @@ import { Invitation, InvitationSchema } from 'src/invitations/schemas/invitation
 import { Game, GameSchema } from 'src/games/schemas/game.schema';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { InvitationsModule } from 'src/invitations/invitations.module';
+import { GraphModule } from 'src/graph/graph.module';
 
 @Module({
   imports: [
+    GraphModule,
     MongooseModule.forFeature([{ name: Slot.name, schema: SlotSchema }]),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Invitation.name, schema: InvitationSchema }]),

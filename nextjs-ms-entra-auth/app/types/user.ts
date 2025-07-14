@@ -4,6 +4,7 @@ export interface User {
   name: string;
   email: string;
   chances: number;
+  role:string;
   lastChanceUpdatedAt:string;
 }
 export interface UserEmailAndChances {

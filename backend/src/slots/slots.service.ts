@@ -8,6 +8,7 @@ import { SlotPeopleAddedDto } from './dtos/SlotPeopleAdded.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SlotStatusDto } from './dtos/slotStatus.dto';
 import { UsersService } from 'src/users/users.service';
+import { Invitation } from 'src/invitations/schemas/invitation.schema';
 
 @Injectable()
 export class SlotsService {
@@ -73,7 +74,7 @@ export class SlotsService {
           }).exec()
         : [];
   }
-  
+
 
   async getAllActiveSlotsByGameId(gameId: string): Promise<Slot[]> {
     return this.slotModel.find({
@@ -105,7 +106,9 @@ export class SlotsService {
       return true;
     return false;
   }
-  
+
+
+
 
   async createSlot(createSlotDto: SlotDto): Promise<Slot> {
     const now = new Date();
@@ -215,5 +218,35 @@ export class SlotsService {
     slotId: slotId,
     ...this.getTodayFilter()
   }).exec();
+}
+
+async SlotsAndInvitationsByGameId(gameId: string, startTime: string, endTime: string): Promise<{
+  slots: Slot[];
+  invitations: Invitation[];
+}> {
+
+ console.log(startTime+" "+endTime);
+ 
+  const slots = await this.slotModel
+    .find({
+      gameId,
+      slotStatus: { $in: ['booked', 'cancelled', 'failed', 'on-hold'] },
+      startTime: { $gte: startTime },
+      endTime: { $lte: endTime },    
+      ...this.getTodayFilter(),
+    })
+    .exec();
+
+  const slotIds = slots.map(slot => slot.slotId);
+  const invitations = slotIds.length > 0
+    ? await this.invitationsService.getAllInvitationsBySlotIds(slotIds, 'accepted')
+    : [];
+
+
+
+  return {
+    slots,
+    invitations,
+  };
 }
 }

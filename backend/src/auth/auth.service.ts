@@ -40,7 +40,7 @@ export class AuthService {
     const payload = { 
       sub: user.userId, 
       email: user.email,
-      name: user.name,
+      role:user.role
     };
     return {
       access_token: this.jwtService.sign(payload),
@@ -56,21 +56,7 @@ export class AuthService {
   }
   
  
-async validateEmailPassword(email: string, password: string): Promise<User> {
-  const user = await this.userModel.findOne({ email }).exec();
-  
-  if (!user) {
-    throw new BadRequestException('User not found');
-  }
-  
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new BadRequestException('Invalid credentials');
-  }
-
-  return user;
-}
 
 async validateUserByEmail(email: string): Promise<User> {
   const user = await this.userModel.findOne({ email }).exec();
